@@ -1,0 +1,13 @@
+{
+  "name": "@rank-orbit/source",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {},
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "@nx/js": "22.2.7",
+    "@nx/workspace": "22.2.7",
+    "nx": "22.2.7"
+  }
+}
