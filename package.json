@@ -56,6 +56,8 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.1.6",
+    "@clerk/nextjs": "^6.36.5",
     "@nestjs/common": "^11.1.9",
     "@nestjs/core": "^11.1.9",
     "@nestjs/microservices": "^11.1.9",
@@ -66,7 +68,10 @@
     "axios": "^1.6.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "framer-motion": "^12.23.26",
+    "lucide-react": "^0.562.0",
     "next": "~16.0.1",
+    "next-themes": "^0.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "reflect-metadata": "^0.2.2",
