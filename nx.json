@@ -33,7 +33,11 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/api-gateway-e2e/**/*", "apps/seo-service-e2e/**/*"]
+      "exclude": [
+        "apps/api-gateway-e2e/**/*",
+        "apps/seo-service-e2e/**/*",
+        "apps/crawler-service-e2e/**/*"
+      ]
     },
     {
       "plugin": "@nx/next/plugin",
