@@ -36,6 +36,7 @@
       "exclude": [
         "apps/api-gateway-e2e/**/*",
         "apps/seo-service-e2e/**/*",
+        "apps/crawler-service-e2e/**/*",
         "apps/crawler-service-e2e/**/*"
       ]
     },
