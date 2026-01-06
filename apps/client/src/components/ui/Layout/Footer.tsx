@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { Github, Linkedin, Twitter } from 'lucide-react'
+import { Github, Linkedin, Twitter } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -10,7 +10,8 @@ export default function Footer() {
           <div className="col-span-1 sm:col-span-2">
             <h3 className="text-xl font-bold gradient-text mb-4">SEO Performance Analyzer</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md">
-              Analyze your website&apos;s SEO performance with AI-powered insights and actionable recommendations.
+              Analyze your website&apos;s SEO performance with AI-powered insights and actionable
+              recommendations.
             </p>
             <div className="flex space-x-4">
               <a
@@ -44,25 +45,39 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Features</h4>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Features
+            </h4>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
               <li>
-                <a href="/#features" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/#features"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   SEO Analysis
                 </a>
               </li>
               <li>
-                <a href="/#features" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/#features"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   AI Insights
                 </a>
               </li>
               <li>
-                <a href="/#features" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/#features"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   Performance Metrics
                 </a>
               </li>
               <li>
-                <a href="/#features" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/#features"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   Reports
                 </a>
               </li>
@@ -70,25 +85,39 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Resources</h4>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Resources
+            </h4>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
               <li>
-                <a href="/docs" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/docs"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   Documentation
                 </a>
               </li>
               <li>
-                <a href="/docs" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/docs"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   API Reference
                 </a>
               </li>
               <li>
-                <a href="/blog" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/blog"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   Blog
                 </a>
               </li>
               <li>
-                <a href="/about" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <a
+                  href="/about"
+                  className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
                   Support
                 </a>
               </li>
@@ -116,5 +145,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

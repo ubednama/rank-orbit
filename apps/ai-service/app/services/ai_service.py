@@ -12,6 +12,7 @@ from app.models.schemas import AnalyzeRequest, AIResponse
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+
 class AIInsightGenerator:
     def __init__(self):
         try:
@@ -19,20 +20,22 @@ class AIInsightGenerator:
                 logger.warning("API Key is missing. AI features will fail.")
                 self.chain = None
                 return
-            
+
             self.model = ChatGoogleGenerativeAI(
-                model=settings.MODEL_NAME,
-                google_api_key=settings.GOOGLE_API_KEY, 
-                temperature=0.7
+                model=settings.MODEL_NAME, google_api_key=settings.GOOGLE_API_KEY, temperature=0.7
             )
             self.parser = JsonOutputParser(pydantic_object=AIResponse)
-            
-            self.prompt = ChatPromptTemplate.from_messages([
-                ("system", 
-                 "You are an expert Technical SEO Auditor. Your task is to analyze a page's content and technical stats."
-                 "Your response must be in valid JSON format only, following the instructions: {format_instructions}"),
-                ("human", 
-                 """
+
+            self.prompt = ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        "You are an expert Technical SEO Auditor. Your task is to analyze a page's content and technical stats."
+                        "Your response must be in valid JSON format only, following the instructions: {format_instructions}",
+                    ),
+                    (
+                        "human",
+                        """
                  Analyze this website data:
                  
                  INFO:
@@ -74,9 +77,11 @@ class AIInsightGenerator:
 
                       ## Action Plan
                       ...
-                 """)
-            ])
-            
+                 """,
+                    ),
+                ]
+            )
+
             self.chain = self.prompt | self.model | self.parser
 
         except Exception as e:
@@ -85,24 +90,37 @@ class AIInsightGenerator:
 
     def generate(self, data: AnalyzeRequest) -> Dict:
         if not self.chain:
-            return {"summary": "AI Service not configured.", "recommendations": [], "keyword_analysis": "N/A"}
+            return {
+                "summary": "AI Service not configured.",
+                "recommendations": [],
+                "keyword_analysis": "N/A",
+            }
 
         # Double clean content to pure text for token efficiency
-        soup = BeautifulSoup(data.page_content, 'html.parser')
-        text_content = soup.get_text(separator=' ', strip=True)[:10000] # Truncate to avoid token limits
+        soup = BeautifulSoup(data.page_content, "html.parser")
+        text_content = soup.get_text(separator=" ", strip=True)[
+            :10000
+        ]  # Truncate to avoid token limits
 
         try:
-            result = self.chain.invoke({
-                "title": data.metadata.get('title', 'N/A'),
-                "description": data.metadata.get('description', 'N/A'),
-                "lighthouse_metrics": json.dumps(data.lighthouse_metrics, indent=2),
-                "text_summary": text_content,
-                "format_instructions": self.parser.get_format_instructions()
-            })
+            result = self.chain.invoke(
+                {
+                    "title": data.metadata.get("title", "N/A"),
+                    "description": data.metadata.get("description", "N/A"),
+                    "lighthouse_metrics": json.dumps(data.lighthouse_metrics, indent=2),
+                    "text_summary": text_content,
+                    "format_instructions": self.parser.get_format_instructions(),
+                }
+            )
             return result
         except Exception as e:
             logger.error(f"AI generation failed: {e}")
-            return {"summary": "Error generating insights.", "recommendations": ["Check server logs."], "keyword_analysis": "Error"}
+            return {
+                "summary": "Error generating insights.",
+                "recommendations": ["Check server logs."],
+                "keyword_analysis": "Error",
+            }
+
 
 # Singleton instance
 ai_generator = AIInsightGenerator()

@@ -1,6 +1,6 @@
 //@ts-check
 
-const { composePlugins, withNx } = require('@nx/next');
+const { composePlugins, withNx } = require("@nx/next");
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
@@ -13,8 +13,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:3333/api/:path*',
+        source: "/api/:path*",
+        destination: "http://localhost:3333/api/:path*",
       },
     ];
   },

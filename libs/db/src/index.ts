@@ -1,4 +1,4 @@
-export * from './generated/client';
+export * from "./generated/client";
 
 import { PrismaClient } from "./generated/client";
 
