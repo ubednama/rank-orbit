@@ -1,4 +1,4 @@
-import { plainToInstance } from "class-transformer";
+import { plainToInstance, Type } from "class-transformer";
 import { IsEnum, IsNumber, IsOptional, IsString, IsUrl, validateSync } from "class-validator";
 
 export enum Environment {
@@ -14,7 +14,8 @@ export class EnvironmentVariables {
 
   @IsNumber()
   @IsOptional()
-  PORT = 3333;
+  @Type(() => Number)
+  API_GATEWAY_PORT = 3333;
 
   @IsUrl({ require_tld: false })
   @IsString()

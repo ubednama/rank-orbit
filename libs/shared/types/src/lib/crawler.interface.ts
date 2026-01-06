@@ -32,7 +32,7 @@ export interface AIAnalysis {
   score_rationale?: string;
 }
 
-export interface CrawlResult {
+export interface CrawlResponse {
   metadata: SeoMetadata;
   page_content: string;
   lighthouse_metrics?: LighthouseMetrics;

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import * as puppeteer from "puppeteer";
 import * as cheerio from "cheerio";
-import { CrawlResult, LighthouseMetrics } from "@shared/types";
+import { CrawlResponse, LighthouseMetrics } from "@shared/types";
 import { spawn } from "child_process";
 import * as path from "path";
 
@@ -9,7 +9,7 @@ import * as path from "path";
 export class CrawlService {
   private readonly logger = new Logger(CrawlService.name);
 
-  async extractMetadata(url: string): Promise<CrawlResult> {
+  async extractMetadata(url: string): Promise<CrawlResponse> {
     let browser;
     try {
       browser = await puppeteer.launch({
@@ -49,8 +49,10 @@ export class CrawlService {
         };
       });
 
+      const htmlContent = await page.content();
+
       // Sanitize HTML Content for AI Context
-      const $ = cheerio.load(content);
+      const $ = cheerio.load(htmlContent);
       $("script").remove();
       $("style").remove();
       $("svg").remove();

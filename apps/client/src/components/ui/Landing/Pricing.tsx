@@ -81,14 +81,14 @@ export default function Pricing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className={`relative p-8 rounded-2xl border backdrop-blur-sm flex flex-col ${
+              className={`relative p-8 rounded-2xl border backdrop-blur-xs flex flex-col ${
                 plan.popular
                   ? "bg-white dark:bg-white/10 border-indigo-500/50 shadow-2xl shadow-indigo-500/10"
                   : "bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10"
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-linear-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                   Most Popular
                 </div>
               )}

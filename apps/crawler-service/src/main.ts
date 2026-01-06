@@ -1,16 +1,17 @@
 /**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
+ * Rank Orbit Crawler Service
  */
-
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app/app.module";
+import { ConfigService } from "@nestjs/config";
 
 async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule);
+    const configService = app.get(ConfigService);
 
+    // Global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -18,12 +19,14 @@ async function bootstrap() {
       }),
     );
 
+    // Global configuration
     const globalPrefix = "api";
     app.setGlobalPrefix(globalPrefix);
-    const port = process.env.PORT || 3001;
-    Logger.log(`Attempting to start Crawler Service on port: ${port}`);
+    
+    const port = configService.get<number>('CRAWLER_PORT', 3001);
+
     await app.listen(port);
-    Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
+    Logger.log(`🚀 Crawler Service running on: http://localhost:${port}/${globalPrefix}`);
   } catch (error) {
     Logger.error("Failed to start Crawler Service", error);
     process.exit(1);

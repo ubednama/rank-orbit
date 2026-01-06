@@ -74,7 +74,7 @@ export default function SEOReportPage() {
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-white mt-2">
               SEO Audit{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500">
                 Report
               </span>
             </h1>
@@ -91,7 +91,7 @@ export default function SEOReportPage() {
               Export PDF
             </Button>
             <Button
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/20"
+              className="bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-black"
               onClick={() => (window.location.href = "/")}
             >
               New Audit
@@ -101,7 +101,7 @@ export default function SEOReportPage() {
 
         {/* Error State */}
         {error && !loading && (
-          <Card className="border-red-200 bg-red-50 dark:bg-red-900/10 backdrop-blur-sm">
+          <Card className="border-red-200 bg-red-50 dark:bg-red-900/10 backdrop-blur-xs">
             <CardContent className="pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-red-600 dark:text-red-400">
               <div className="flex items-center space-x-3">
                 <AlertCircle className="w-6 h-6 shrink-0" />

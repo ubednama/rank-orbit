@@ -69,7 +69,7 @@ export default function CoreWebVitals({ data, isLoading }: CoreWebVitalsProps) {
         <CardContent>
           <div className="text-3xl font-bold">{data.lcp || "N/A"}</div>
           <Badge
-            variant={data.lcp && parseFloat(data.lcp) <= 2.5 ? "outline" : "secondary"}
+            variant={data.lcp && parseFloat(data.lcp) <= 2.5 ? "outline-solid" : "secondary"}
             className="mt-2"
           >
             Target: &lt; 2.5s
@@ -86,7 +86,7 @@ export default function CoreWebVitals({ data, isLoading }: CoreWebVitalsProps) {
         <CardContent>
           <div className="text-3xl font-bold">{data.cls || "N/A"}</div>
           <Badge
-            variant={data.cls && parseFloat(data.cls) <= 0.1 ? "outline" : "secondary"}
+            variant={data.cls && parseFloat(data.cls) <= 0.1 ? "outline-solid" : "secondary"}
             className="mt-2"
           >
             Target: &lt; 0.1
@@ -103,7 +103,7 @@ export default function CoreWebVitals({ data, isLoading }: CoreWebVitalsProps) {
         <CardContent>
           <div className="text-3xl font-bold">{data.tbt || "N/A"}</div>
           <Badge
-            variant={data.tbt && parseInt(data.tbt) <= 200 ? "outline" : "secondary"}
+            variant={data.tbt && parseInt(data.tbt) <= 200 ? "outline-solid" : "secondary"}
             className="mt-2"
           >
             Target: &lt; 200ms

@@ -21,12 +21,12 @@ export default function Navbar() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="fixed top-0 w-full z-50 border-b border-gray-200/50 dark:border-white/10 bg-white/70 dark:bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-white/40 dark:supports-[backdrop-filter]:bg-black/20"
+      className="fixed top-0 w-full z-50 border-b border-gray-200/50 dark:border-white/10 bg-white/70 dark:bg-black/50 backdrop-blur-xl supports-backdrop-filter:bg-white/40 dark:supports-backdrop-filter:bg-black/20"
     >
       <div className="w-full max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-3 group z-50">
           <Logo className="w-9 h-9 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">
+          <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-indigo-500 to-purple-500">
             Rank Orbit
           </span>
         </Link>

@@ -48,7 +48,7 @@ export default function Features() {
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
             Everything you need to <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500">
               Rank #1
             </span>
           </h2>
@@ -67,7 +67,7 @@ export default function Features() {
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ y: -5 }}
-              className="p-8 rounded-2xl bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-white dark:hover:bg-white/10 transition-all backdrop-blur-sm group shadow-sm hover:shadow-lg dark:shadow-none"
+              className="p-8 rounded-2xl bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-white dark:hover:bg-white/10 transition-all backdrop-blur-xs group shadow-xs hover:shadow-lg dark:shadow-none"
             >
               <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-black/50 border border-gray-200 dark:border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 {feature.icon}

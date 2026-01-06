@@ -27,7 +27,7 @@ export function useSEOAudit(url: string | null) {
 
       const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3333";
       eventSource = new EventSource(
-        `${gatewayUrl}/api/audit/stream?url=${encodeURIComponent(url)}`,
+        `${gatewayUrl}/audit/stream?url=${encodeURIComponent(url)}`,
       );
 
       eventSource.onmessage = (event) => {

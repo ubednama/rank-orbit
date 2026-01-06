@@ -79,13 +79,13 @@ export default function Testimonials() {
 
   return (
     <section className="py-24 bg-white dark:bg-black relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent"></div>
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent"></div>
 
       <div className="w-full max-w-7xl mx-auto px-6 relative z-10 mb-12">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
             Loved by thousands of <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500">
               Global Creators
             </span>
           </h2>
@@ -104,8 +104,8 @@ export default function Testimonials() {
         onTouchEnd={() => setIsPaused(false)}
       >
         {/* Gradients for fade effect */}
-        <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-white dark:from-black to-transparent z-20 pointer-events-none" />
-        <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-white dark:from-black to-transparent z-20 pointer-events-none" />
+        <div className="absolute top-0 left-0 h-full w-24 bg-linear-to-r from-white dark:from-black to-transparent z-20 pointer-events-none" />
+        <div className="absolute top-0 right-0 h-full w-24 bg-linear-to-l from-white dark:from-black to-transparent z-20 pointer-events-none" />
 
         <motion.div
           className="flex space-x-6 px-6 w-max"
@@ -116,7 +116,7 @@ export default function Testimonials() {
           {allTestimonials.map((testimonial, index) => (
             <motion.div
               key={index}
-              className="w-[300px] md:w-[400px] flex-shrink-0 p-8 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none"
+              className="w-[300px] md:w-[400px] shrink-0 p-8 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none"
               whileHover={{ scale: 1.02 }}
             >
               <div className="flex space-x-1 mb-6">

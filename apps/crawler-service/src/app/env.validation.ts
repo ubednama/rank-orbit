@@ -1,4 +1,4 @@
-import { plainToInstance } from "class-transformer";
+import { plainToInstance, Type } from "class-transformer";
 import { IsEnum, IsNumber, IsOptional, validateSync } from "class-validator";
 
 export enum Environment {
@@ -14,7 +14,8 @@ export class EnvironmentVariables {
 
   @IsNumber()
   @IsOptional()
-  PORT = 3001;
+  @Type(() => Number)
+  CRAWLER_PORT = 3001;
 }
 
 export function validate(config: Record<string, unknown>) {

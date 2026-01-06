@@ -3,11 +3,11 @@ import { HttpService } from "@nestjs/axios";
 import { ConfigService } from "@nestjs/config";
 import { firstValueFrom, Observable } from "rxjs";
 import { AnalyzeRequestDto } from "./dto/analyze-request.dto";
-import { CrawlResult, AiAnalysisResponse, CrawlRequestDto } from "@shared/types";
+import { CrawlResponse, AiAnalysisResponse, CrawlRequestDto } from "@shared/types";
 
 export type AuditStreamPayload =
   | { type: "status"; message: string }
-  | { type: "crawler"; data: CrawlResult }
+  | { type: "crawler"; data: CrawlResponse }
   | { type: "ai"; data: AiAnalysisResponse }
   | { type: "error"; message: string }
   | { type: "complete" };
@@ -33,10 +33,10 @@ export class AuditService {
     this.aiUrl = this.configService.get<string>("AI_SERVICE_URL", "http://localhost:8000/api");
   }
 
-  async crawl(dto: CrawlRequestDto): Promise<CrawlResult> {
+  async crawl(dto: CrawlRequestDto): Promise<CrawlResponse> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post<CrawlResult>(`${this.crawlerUrl}/api/crawl`, dto),
+        this.httpService.post<CrawlResponse>(`${this.crawlerUrl}/api/crawl`, dto),
       );
       return response.data;
     } catch (error) {
@@ -72,9 +72,9 @@ export class AuditService {
 
           // 2. Perform Crawl
           const crawlDto: CrawlRequestDto = { url };
-          const crawlResult = await this.crawl(crawlDto);
+          const crawlResponse = await this.crawl(crawlDto);
 
-          subscriber.next({ data: { type: "crawler", data: crawlResult } });
+          subscriber.next({ data: { type: "crawler", data: crawlResponse } });
 
           // Ghost Job Check: If client disconnected, stop before expensive AI call
           if (subscriber.closed) {
@@ -87,9 +87,9 @@ export class AuditService {
 
           // Prepare AI Loop Payload
           const analyzeDto = {
-            page_content: crawlResult.page_content,
-            metadata: crawlResult.metadata,
-            lighthouse_metrics: crawlResult.lighthouse_metrics,
+            page_content: crawlResponse.page_content,
+            metadata: crawlResponse.metadata,
+            lighthouse_metrics: crawlResponse.lighthouse_metrics,
           };
 
           const aiResult = await this.analyze(analyzeDto);

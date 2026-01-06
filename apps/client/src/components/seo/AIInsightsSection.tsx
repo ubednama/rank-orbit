@@ -38,7 +38,7 @@ export default function AIInsightsSection({
       <CardContent className="space-y-6">
         <AISeoScore data={data} />
 
-        <div className="bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border border-indigo-100/50 dark:border-white/5">
+        <div className="bg-linear-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border border-indigo-100/50 dark:border-white/5">
           <div className="text-base leading-relaxed text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none prose-p:my-6 prose-img:rounded-xl prose-headings:mb-4 prose-headings:mt-8">
             <h4 className="flex items-center gap-2 font-semibold text-lg mb-4 text-indigo-700 dark:text-indigo-300">
               <Sparkles className="w-5 h-5" />

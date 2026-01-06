@@ -16,7 +16,7 @@ export default function AboutPage() {
           >
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
               Building the Future of <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500">
                 Accessible SEO
               </span>
             </h1>
@@ -48,7 +48,7 @@ export default function AboutPage() {
             </div>
 
             {/* Founder Section */}
-            <div className="mt-12 p-6 rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow-sm">
+            <div className="mt-12 p-6 rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow-xs">
               <div className="mb-4">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Ubednama</h3>
                 <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">
@@ -98,7 +98,7 @@ export default function AboutPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-8 shadow-xl shadow-indigo-500/5 backdrop-blur-sm"
+            className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-8 shadow-xl shadow-indigo-500/5 backdrop-blur-xs"
           >
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Send us a message
@@ -111,7 +111,7 @@ export default function AboutPage() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-hidden transition-all text-gray-900 dark:text-white"
                     placeholder="John"
                   />
                 </div>
@@ -121,7 +121,7 @@ export default function AboutPage() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-hidden transition-all text-gray-900 dark:text-white"
                     placeholder="Doe"
                   />
                 </div>
@@ -133,7 +133,7 @@ export default function AboutPage() {
                 </label>
                 <input
                   type="email"
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-hidden transition-all text-gray-900 dark:text-white"
                   placeholder="john@example.com"
                 />
               </div>
@@ -144,12 +144,12 @@ export default function AboutPage() {
                 </label>
                 <textarea
                   rows={4}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-900 dark:text-white resize-none"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-hidden transition-all text-gray-900 dark:text-white resize-none"
                   placeholder="Tell us how we can help..."
                 ></textarea>
               </div>
 
-              <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-4 rounded-xl flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02]">
+              <button className="w-full bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-4 rounded-xl flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02]">
                 <span>Send Message</span>
                 <Send className="w-4 h-4" />
               </button>
