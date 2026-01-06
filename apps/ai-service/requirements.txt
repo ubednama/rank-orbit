@@ -1,2 +1,8 @@
 fastapi
 uvicorn
+pydantic-settings
+python-dotenv
+langchain-google-genai
+langchain
+beautifulsoup4
+black

@@ -12,9 +12,27 @@ export default function Hero() {
     const handleAnalyze = (e: React.FormEvent) => {
         e.preventDefault();
         if (url) {
-            // Redirect to dashboard with query param or handled state
-            // For now, let's assume dashboard handles ?url=...
-            router.push(`/dashboard?url=${encodeURIComponent(url)}`);
+            // Generate a simulated report ID
+            const id = `${new Date().getFullYear()}${new Date().getMonth() + 1}${new Date().getDate()}_${Math.floor(Math.random() * 10000000)}.html`;
+
+            // Extract domain for display/db
+            let domain = '';
+            try {
+                domain = new URL(url).hostname;
+            } catch {
+                domain = url;
+            }
+
+            const date = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
+
+            const queryParams = new URLSearchParams({
+                date_begin: date,
+                date_end: date,
+                domain_1: domain,
+                url: url
+            });
+
+            router.push(`/seo/${id}?${queryParams.toString()}`);
         }
     };
 

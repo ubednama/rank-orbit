@@ -20,7 +20,13 @@
         "name": "next"
       }
     ],
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@db": ["../../libs/db/src/index.ts"],
+      "@shared/types": ["../../libs/shared/types/src/index.ts"]
+    }
   },
   "include": [
     "**/*.ts",

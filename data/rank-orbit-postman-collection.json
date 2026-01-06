@@ -1,0 +1,211 @@
+{
+  "info": {
+    "_postman_id": "rank-orbit-api-collection",
+    "name": "Rank Orbit API Collection",
+    "description": "Complete API collection for Rank Orbit SEO Audit Platform\n\n**Services:**\n- API Gateway (Port 3333) - Main entry point\n- Crawler Service (Port 3001) - Website crawling & Lighthouse\n- AI Service (Port 8000) - AI-powered analysis",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "api_gateway_url",
+      "value": "http://localhost:3333/api",
+      "type": "string"
+    },
+    {
+      "key": "crawler_service_url",
+      "value": "http://localhost:3001/api",
+      "type": "string"
+    },
+    {
+      "key": "ai_service_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "test_url",
+      "value": "https://example.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "API Gateway (Port 3333)",
+      "description": "Main API Gateway - proxies requests to other services",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_gateway_url}}/health",
+              "host": ["{{api_gateway_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if API Gateway is running"
+          },
+          "response": []
+        },
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_gateway_url}}",
+              "host": ["{{api_gateway_url}}"]
+            },
+            "description": "Get API Gateway welcome message"
+          },
+          "response": []
+        },
+        {
+          "name": "Audit - Crawl Website",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{test_url}}\"\n}"
+            },
+            "url": {
+              "raw": "{{api_gateway_url}}/audit/crawl",
+              "host": ["{{api_gateway_url}}"],
+              "path": ["audit", "crawl"]
+            },
+            "description": "Crawl a website and get metadata + Lighthouse metrics.\n\n**Response:**\n- raw_html: Full HTML content\n- metadata: { title, description, h1, images, missing_alt_count }\n- technical_seo: { performance_score, lcp, cls, tbt }"
+          },
+          "response": []
+        },
+        {
+          "name": "Audit - AI Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"raw_html\": \"<html><head><title>Test</title></head><body><h1>Hello</h1></body></html>\",\n  \"metadata\": {\n    \"title\": \"Test Page\",\n    \"description\": \"A test page\",\n    \"h1\": [\"Hello\"],\n    \"images\": [],\n    \"missing_alt_count\": 0\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_gateway_url}}/audit/analyze",
+              "host": ["{{api_gateway_url}}"],
+              "path": ["audit", "analyze"]
+            },
+            "description": "Send raw HTML and metadata to AI service for analysis.\n\n**Response:**\n- ai_analysis: { summary, recommendations[] }"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Crawler Service (Port 3001)",
+      "description": "Direct access to Crawler Service - used internally by API Gateway",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{crawler_service_url}}/health",
+              "host": ["{{crawler_service_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if Crawler Service is running"
+          },
+          "response": []
+        },
+        {
+          "name": "Crawl Website (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{test_url}}\"\n}"
+            },
+            "url": {
+              "raw": "{{crawler_service_url}}/crawl",
+              "host": ["{{crawler_service_url}}"],
+              "path": ["crawl"]
+            },
+            "description": "Directly crawl a website (bypassing API Gateway).\n\n**Response:**\n- raw_html: Full HTML content\n- metadata: { title, description, h1[], images[], missing_alt_count }\n- lighthouse_metrics: { performance_score, lcp, cls, tbt }"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Service (Port 8000)",
+      "description": "Direct access to AI Service (FastAPI/Python) - used internally by API Gateway",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ai_service_url}}/",
+              "host": ["{{ai_service_url}}"],
+              "path": [""]
+            },
+            "description": "Get AI Service welcome message"
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ai_service_url}}/health",
+              "host": ["{{ai_service_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if AI Service is running"
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"raw_html\": \"<html><head><title>Test</title></head><body><h1>Hello</h1></body></html>\",\n  \"metadata\": {\n    \"title\": \"Test Page\",\n    \"description\": \"A test page\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{ai_service_url}}/analyze",
+              "host": ["{{ai_service_url}}"],
+              "path": ["analyze"]
+            },
+            "description": "Directly analyze content (bypassing API Gateway).\n\n**Response:**\n- ai_analysis: { summary, recommendations[] }\n\n**Note:** Currently returns mock data"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

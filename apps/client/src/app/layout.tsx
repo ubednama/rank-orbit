@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from '../components/providers/theme-provider';
 import NavBar from '../components/ui/Layout/NavBar';
 import Footer from '../components/ui/Layout/Footer';
+import QueryProvider from '@/providers/QueryProvider';
+import { Toaster } from 'sonner';
 import './global.css';
 
 export const metadata: Metadata = {
@@ -22,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body>
         <ThemeProvider
           attribute="class"
@@ -30,9 +32,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NavBar />
-          {children}
-          <Footer />
+          <QueryProvider>
+            <NavBar />
+            {children}
+            <Footer />
+            <Toaster richColors />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
