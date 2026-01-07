@@ -1,11 +1,20 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { LighthouseMetrics, SeoMetadata as Metadata, AIAnalysis } from "@shared/types";
+import {
+  LighthouseMetrics,
+  SeoMetadata as Metadata,
+  AIAnalysis,
+  TechnicalAnalysis,
+  ReadabilityStats,
+} from "@shared/types";
+import { CacheService } from "../services/cache.service";
 
 export interface SEOReportData {
   lighthouse_metrics: LighthouseMetrics;
   metadata: Metadata;
   ai_analysis: AIAnalysis | null;
+  technical_analysis?: TechnicalAnalysis;
+  readability_analysis?: ReadabilityStats;
 }
 
 export function useSEOAudit(url: string | null) {
@@ -19,6 +28,16 @@ export function useSEOAudit(url: string | null) {
     let eventSource: EventSource | null = null;
 
     if (url) {
+      const cacheKey = `seo_audit_${url}`;
+      const cached = CacheService.get<SEOReportData>(cacheKey);
+
+      if (cached) {
+        setReportData(cached);
+        setLoading(false);
+        setAiLoading(false);
+        return;
+      }
+
       setReportData(null);
       setError("");
       setIsNetworkError(false);
@@ -26,9 +45,7 @@ export function useSEOAudit(url: string | null) {
       setAiLoading(false);
 
       const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3333";
-      eventSource = new EventSource(
-        `${gatewayUrl}/audit/stream?url=${encodeURIComponent(url)}`,
-      );
+      eventSource = new EventSource(`${gatewayUrl}/audit/stream?url=${encodeURIComponent(url)}`);
 
       eventSource.onmessage = (event) => {
         try {
@@ -41,15 +58,18 @@ export function useSEOAudit(url: string | null) {
 
             case "crawler":
               console.log("Crawler Response:", parsed.data);
-              setReportData(
-                (prev) =>
-                  ({
-                    ...(prev || {}),
-                    lighthouse_metrics: parsed.data.lighthouse_metrics,
-                    metadata: parsed.data.metadata,
-                    ai_analysis: null,
-                  } as SEOReportData),
-              );
+              setReportData((prev) => {
+                const newData = {
+                  ...(prev || {}),
+                  lighthouse_metrics: parsed.data.lighthouse_metrics,
+                  metadata: parsed.data.metadata,
+                  technical_analysis: parsed.data.technical_analysis,
+                  readability_analysis: parsed.data.readability_analysis,
+                  ai_analysis: null,
+                } as SEOReportData;
+                // Update cache partially? No, wait for AI.
+                return newData;
+              });
               setLoading(false); // Crawler done, page is ready
               setAiLoading(true); // Now waiting for AI
               break;
@@ -58,10 +78,13 @@ export function useSEOAudit(url: string | null) {
               console.log("AI Response:", parsed.data);
               setReportData((prev) => {
                 if (!prev) return null;
-                return {
+                const finalData = {
                   ...prev,
                   ai_analysis: parsed.data.ai_analysis,
                 };
+                // Cache the final result
+                CacheService.set(cacheKey, finalData);
+                return finalData;
               });
               setAiLoading(false);
               toast.success("AI Analysis Complete!");

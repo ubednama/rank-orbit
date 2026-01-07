@@ -2,7 +2,6 @@
   "name": "@rank-orbit/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.8.0",
@@ -39,11 +38,13 @@
     "eslint-plugin-jsx-a11y": "6.10.1",
     "eslint-plugin-react": "7.35.0",
     "eslint-plugin-react-hooks": "5.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.0.2",
     "jest-environment-jsdom": "^30.0.2",
     "jest-environment-node": "^30.0.2",
     "jest-util": "^30.0.2",
     "jsonc-eslint-parser": "^2.1.0",
+    "lint-staged": "^16.2.7",
     "nx": "22.2.7",
     "postcss": "8.4.38",
     "prettier": "^2.6.2",
@@ -60,6 +61,7 @@
     "@clerk/clerk-sdk-node": "^5.1.6",
     "@clerk/nextjs": "^6.36.5",
     "@nestjs/axios": "^4.0.1",
+    "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.1.9",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.9",
@@ -89,6 +91,7 @@
     "amqplib": "^0.10.9",
     "axios": "^1.7.9",
     "body-parser": "^2.2.1",
+    "cache-manager": "^7.2.7",
     "cheerio": "^1.1.2",
     "chrome-launcher": "^1.2.1",
     "class-transformer": "^0.5.1",
@@ -119,5 +122,18 @@
     "tailwindcss-animate": "^1.0.7",
     "tslib": "^2.3.0",
     "zod": "^3.24.1"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,html,css,scss}": [
+      "prettier --write"
+    ]
+  },
+  "scripts": {
+    "check": "nx run-many -t build --skip-nx-cache",
+    "prepare": "husky"
   }
 }

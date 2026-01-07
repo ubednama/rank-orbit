@@ -1,13 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Zap, CheckCircle, BarChart } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import { ComponentPropsWithoutRef } from "react";
+import { Sparkles, Zap, BarChart, Activity } from "lucide-react";
 import { AIAnalysis } from "@shared/types";
 import AIInsightsLoading from "@/components/loading/AIInsightsLoading";
 import AISeoScore from "./AISeoScore";
-import remarkGfm from "remark-gfm";
-
-type MarkdownComponentProps = ComponentPropsWithoutRef<"div"> & { node?: unknown };
+import { MarkdownRenderer, MarkdownComponentProps } from "@/components/ui/MarkdownRenderer";
+import { Badge } from "@/components/ui/badge";
 
 export default function AIInsightsSection({
   data,
@@ -20,10 +17,35 @@ export default function AIInsightsSection({
     return <AIInsightsLoading />;
   }
 
+  if (data?.error) {
+    const errorMessages: Record<string, string> = {
+      not_configured: "Service Configuration Missing. Please check API keys.",
+      quota_exceeded: "Daily Analysis Limit Reached. Please try again later.",
+      server_error: "Temporary System Error. It's not you, it's us. Please try again.",
+      crawl_failed: "Unable to access the website. Please check the URL and try again.",
+    };
+
+    const message = errorMessages[data.error] || errorMessages.server_error;
+
+    return (
+      <Card className="h-full bg-red-50/50 dark:bg-red-900/10 backdrop-blur-md border-red-200 dark:border-red-800">
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Zap className="w-6 h-6 text-red-500" />
+            <CardTitle className="text-red-700 dark:text-red-400">Analysis Issue</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-700 dark:text-gray-300 font-medium">{message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!data) return null;
 
   return (
-    <Card className="h-full bg-white/40 dark:bg-white/5 backdrop-blur-md border-indigo-500/20 shadow-xl shadow-indigo-500/5">
+    <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-md border-indigo-500/20 shadow-xl shadow-indigo-500/5">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -35,64 +57,113 @@ export default function AIInsightsSection({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-10">
         <AISeoScore data={data} />
 
+        {/* 1. Analysis Summary */}
         <div className="bg-linear-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border border-indigo-100/50 dark:border-white/5">
-          <div className="text-base leading-relaxed text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none prose-p:my-6 prose-img:rounded-xl prose-headings:mb-4 prose-headings:mt-8">
+          <div className="text-gray-700 dark:text-gray-200">
             <h4 className="flex items-center gap-2 font-semibold text-lg mb-4 text-indigo-700 dark:text-indigo-300">
               <Sparkles className="w-5 h-5" />
               Analysis Summary
             </h4>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                strong: ({ node, ...props }: MarkdownComponentProps) => (
-                  <span className="font-bold text-indigo-700 dark:text-indigo-300" {...props} />
-                ),
-                b: ({ node, ...props }: MarkdownComponentProps) => (
-                  <span className="font-bold text-indigo-700 dark:text-indigo-300" {...props} />
-                ),
-              }}
-            >
-              {data.summary || "No summary available."}
-            </ReactMarkdown>
+            <MarkdownRenderer>{data.summary || "No summary available."}</MarkdownRenderer>
           </div>
         </div>
 
-        {data.recommendations && data.recommendations.length > 0 && (
+        {/* 2. Hardcoded Technical Metrics Table */}
+        {data.technical_analysis && Object.keys(data.technical_analysis).length > 0 && (
+          <div className="space-y-4">
+            <h4 className="flex items-center gap-2 font-semibold text-lg text-indigo-700 dark:text-indigo-300">
+              <Activity className="w-5 h-5" />
+              Technical Health Check
+            </h4>
+            <div className="bg-[#f8fafc] dark:bg-white/5 border rounded-xl overflow-hidden shadow-sm">
+              <div className="grid grid-cols-3 gap-4 px-4 py-3 bg-indigo-50/80 dark:bg-white/10 font-semibold text-sm text-indigo-900 dark:text-indigo-100 border-b border-indigo-100/50 dark:border-white/10 uppercase tracking-wide">
+                <div>Metric</div>
+                <div>Value</div>
+                <div>Status</div>
+              </div>
+              {Object.entries(data.technical_analysis).map(
+                ([key, metric]: [string, { value: string | number; status: string }]) => (
+                  <div
+                    key={key}
+                    className="grid grid-cols-3 gap-4 px-4 py-3 border-b border-gray-100 dark:border-white/5 last:border-0 text-sm items-center hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <div className="font-medium text-gray-700 dark:text-gray-200">{key}</div>
+                    <div className="font-mono text-gray-600 dark:text-gray-400">{metric.value}</div>
+                    <div>
+                      <Badge
+                        className={`
+                                            ${
+                                              metric.status === "Excellent" ||
+                                              metric.status === "Good"
+                                                ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
+                                                : ""
+                                            }
+                                            ${
+                                              metric.status === "Needs Work" ||
+                                              metric.status === "Moderate"
+                                                ? "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
+                                                : ""
+                                            }
+                                            ${
+                                              metric.status === "Poor" ||
+                                              metric.status === "Critical"
+                                                ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
+                                                : ""
+                                            }
+                                            border shadow-none hover:bg-opacity-80 rounded-full
+                                        `}
+                        variant="outline"
+                      >
+                        {metric.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 3. Action Plan Container */}
+        {data.action_plan && data.action_plan.length > 0 && (
           <div className="space-y-4">
             <h4 className="flex items-center gap-2 font-semibold text-lg text-indigo-700 dark:text-indigo-300">
               <Zap className="w-5 h-5" />
-              Key Recommendations
+              Strategic Action Plan
             </h4>
             <div className="grid gap-3">
-              {(data.recommendations || []).map((rec: string, i: number) => (
+              {data.action_plan.map((rec: string, i: number) => (
                 <div
                   key={i}
-                  className="flex gap-3 bg-white/40 dark:bg-white/5 p-4 rounded-xl border border-indigo-50/50 dark:border-white/5 hover:border-indigo-200/50 transition-colors"
+                  className="flex gap-4 bg-white/60 dark:bg-white/5 p-5 rounded-xl border border-indigo-50/50 dark:border-white/5 hover:border-indigo-200/50 transition-colors shadow-sm"
                 >
-                  <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                  <div className="text-sm prose dark:prose-invert max-w-none prose-p:my-1 prose-strong:text-indigo-600 dark:prose-strong:text-indigo-400">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
+                  <div className="shrink-0 mt-1">
+                    <div className="w-6 h-6 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs ring-2 ring-white dark:ring-white/10 shadow-sm">
+                      {i + 1}
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <MarkdownRenderer
                       components={{
                         strong: ({ node, ...props }: MarkdownComponentProps) => (
                           <span
-                            className="font-semibold text-indigo-600 dark:text-indigo-400 block mb-1"
+                            className="font-semibold text-indigo-700 dark:text-indigo-300 block mb-1 text-base"
                             {...props}
                           />
                         ),
-                        b: ({ node, ...props }: MarkdownComponentProps) => (
-                          <span
-                            className="font-semibold text-indigo-600 dark:text-indigo-400 block mb-1"
+                        p: ({ node, ...props }: MarkdownComponentProps) => (
+                          <p
+                            className="text-gray-600 dark:text-gray-300 leading-relaxed mb-0"
                             {...props}
                           />
                         ),
                       }}
                     >
                       {rec}
-                    </ReactMarkdown>
+                    </MarkdownRenderer>
                   </div>
                 </div>
               ))}
@@ -100,55 +171,16 @@ export default function AIInsightsSection({
           </div>
         )}
 
+        {/* 4. Full Summary Report */}
         {data.detailed_report && (
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4 border-t border-dashed border-gray-200 dark:border-gray-800">
             <h4 className="flex items-center gap-2 font-semibold text-lg text-indigo-700 dark:text-indigo-300">
               <BarChart className="w-5 h-5" />
-              Detailed Report
+              Full Audit Report
             </h4>
-            <div className="prose dark:prose-invert max-w-none text-sm bg-white/40 dark:bg-white/5 p-6 rounded-xl border border-indigo-50/50 dark:border-white/5 prose-p:my-4 prose-ul:my-4 prose-li:my-1 prose-table:my-6 prose-th:p-3 prose-td:p-3">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  table: ({ node, ...props }: MarkdownComponentProps) => (
-                    <div className="overflow-x-auto my-6 rounded-lg border border-indigo-100/50 dark:border-white/10">
-                      <table className="w-full text-left" {...props} />
-                    </div>
-                  ),
-                  thead: ({ node, ...props }: MarkdownComponentProps) => (
-                    <thead
-                      className="bg-indigo-50/80 dark:bg-white/10 text-xs uppercase font-semibold tracking-wider text-indigo-900 dark:text-indigo-100"
-                      {...props}
-                    />
-                  ),
-                  th: ({ node, ...props }: MarkdownComponentProps) => (
-                    <th
-                      className="px-4 py-3 border-b border-indigo-100/50 dark:border-white/10 whitespace-nowrap"
-                      {...props}
-                    />
-                  ),
-                  td: ({ node, ...props }: MarkdownComponentProps) => (
-                    <td
-                      className="px-4 py-3 border-b border-indigo-50/50 dark:border-white/5"
-                      {...props}
-                    />
-                  ),
-                  tr: ({ node, ...props }: MarkdownComponentProps) => (
-                    <tr
-                      className="hover:bg-indigo-50/30 dark:hover:bg-white/5 transition-colors"
-                      {...props}
-                    />
-                  ),
-                  strong: ({ node, ...props }: MarkdownComponentProps) => (
-                    <strong
-                      className="font-semibold text-indigo-700 dark:text-indigo-300"
-                      {...props}
-                    />
-                  ),
-                }}
-              >
-                {data.detailed_report}
-              </ReactMarkdown>
+            <div className="bg-white/40 dark:bg-white/5 p-8 rounded-xl border border-indigo-50/50 dark:border-white/5 shadow-sm">
+              <MarkdownRenderer>{data.detailed_report}</MarkdownRenderer>
+              {/* SEO Identity/Signature could go here if needed, but excluded from text report per instructions */}
             </div>
           </div>
         )}

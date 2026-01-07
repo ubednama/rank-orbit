@@ -1,10 +1,11 @@
 import logging
 import json
-from typing import Dict
+import re
+from typing import Dict, Any
 from bs4 import BeautifulSoup
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import StrOutputParser
 
 from app.core.config import get_settings
 from app.models.schemas import AnalyzeRequest, AIResponse
@@ -22,43 +23,43 @@ class AIInsightGenerator:
                 return
 
             self.model = ChatGoogleGenerativeAI(
-                model=settings.MODEL_NAME, google_api_key=settings.GOOGLE_API_KEY, temperature=0.7
+                model=settings.MODEL_NAME, 
+                google_api_key=settings.GOOGLE_API_KEY, 
+                temperature=1.0,
+                max_retries=2
             )
-            self.parser = JsonOutputParser(pydantic_object=AIResponse)
+            # Use StrOutputParser to get raw text for manual robust parsing
+            self.parser = StrOutputParser()
 
+            # Prepare the messages
+            # System Prompt: Strict JSON output with specific schema
             self.prompt = ChatPromptTemplate.from_messages(
                 [
                     (
                         "system",
-                        "You are an expert Technical SEO Auditor. Your task is to analyze a page's content and technical stats."
-                        "Your response must be in valid JSON format only, following the instructions: {format_instructions}",
+                        "You are a Senior SEO Expert and Google Algorithm Specialist. "
+                        "Analyze the provided website data and output your response in STRICT VALID JSON format only. "
+                        "Follow this exact schema: \n"
+                        "{{\"summary\": str, \"action_plan\": List[str], \"keyword_analysis\": str, \"detailed_report\": str, \"seo_score\": int, \"score_rationale\": str}} \n\n"
+                        "INSTRUCTIONS: \n"
+                        "1. 'summary': Write exactly 2 paragraphs summarizing the SEO status. Separate paragraphs with a double newline (\\n\\n). \n"
+                        "2. 'action_plan': A list of highly specific, actionable steps. DO NOT repeat what is in the summary. Focus on technical fixes and content strategy. \n"
+                        "3. 'detailed_report': A comprehensive report in MARKDOWN format. \n"
+                        "   - Use '# Executive Summary' for the main title. \n"
+                        "   - Use '## Content Deep Dive' for the analysis section. \n"
+                        "   - Use '## Technical Technical' for technical insights if needed. \n"
+                        "   - Ensure clear paragraph separation with double newlines. \n"
+                        "   - DO NOT include 'SEO Identity' or meta tags in this text report. \n"
+                        "   - DO NOT include a table of technical metrics (these are handled separately). \n"
+                        "4. 'seo_score': An integer from 0-100 based on overall health. \n"
+                        "5. 'technical_analysis': This field is NOT needed in your output (it is calculated programmatically). \n"
                     ),
                     (
                         "human",
                         """
-                 Analyze this website data:
-                 
-                 INFO:
-                 - Page Title: {title}
-                 - Description: {description}
-                 
-                 TECHNICAL METRICS (Lighthouse):
-                 {lighthouse_metrics}
-                 
-                 CONTENT SUMMARY (Cleaned Text):
-                 {text_summary}
-                 
-                 TASKS:
-                 1. If 'performance_score' < 50, strictly warn about speed.
-                 2. Analyze keyword usage across H1, H2, H3, and Body text.
-                 3. Provide 5 actionable recommendations in the format: "**Heading**\\nDescription text...".
-                 4. Calculate an 'seo_score' (0-100) based on content quality and technical health.
-                 5. Provide a 'score_rationale': A concise sentence explaining why this score was given.
-                 6. Generate a 'detailed_report' in Markdown format following these STRICT rules:
-                    - **CRITICAL**: Do NOT use top-level headers like # Executive Summary or # Detailed Report. Start directly with the content.
                     - **CRITICAL**: Insert a double newline (\n\n) between every paragraph and list item to ensuring spacing.
                     - **CRITICAL**: Bold key terms using **term**.
-                    - Structure the report as:
+                    - Structure:
                       
                       ## Executive Summary
                       (Paragraph 1)
@@ -70,13 +71,7 @@ class AIInsightGenerator:
                       - **Description**: ...
 
                       ## Content Deep Dive
-                      ...
-
-                      ## Technical Snapshot
-                      (Markdown Table)
-
-                      ## Action Plan
-                      ...
+                      (Detailed analysis of content, keywords, and relevance)
                  """,
                     ),
                 ]
@@ -88,12 +83,44 @@ class AIInsightGenerator:
             logger.error(f"Failed to initialize AIInsightGenerator: {e}")
             self.chain = None
 
+    def _clean_and_parse_json(self, raw_output: str) -> Dict[str, Any]:
+        """
+        Robustly clean and parse JSON from LLM output.
+        Handles Markdown code blocks, invalid escapes, and newlines.
+        """
+        try:
+            # 1. Strip Markdown code blocks
+            text = raw_output.strip()
+            if text.startswith("```json"):
+                text = text[7:]
+            elif text.startswith("```"):
+                text = text[3:]
+            
+            if text.endswith("```"):
+                text = text[:-3]
+            
+            text = text.strip()
+
+            # 2. Fix invalid escape sequences
+            text = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', text)
+
+            # 3. Parse with strict=False
+            return json.loads(text, strict=False)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON Parse Error: {e}")
+            logger.error(f"Failed JSON Content: {text[:500]}...")
+            raise e
+
+
+
     def generate(self, data: AnalyzeRequest) -> Dict:
         if not self.chain:
             return {
                 "summary": "AI Service not configured.",
-                "recommendations": [],
+                "action_plan": [],
+                "technical_analysis": {},
                 "keyword_analysis": "N/A",
+                "error": "not_configured"
             }
 
         # Double clean content to pure text for token efficiency
@@ -103,22 +130,34 @@ class AIInsightGenerator:
         ]  # Truncate to avoid token limits
 
         try:
-            result = self.chain.invoke(
+            # Invoke chain to get raw string
+            raw_result = self.chain.invoke(
                 {
                     "title": data.metadata.get("title", "N/A"),
                     "description": data.metadata.get("description", "N/A"),
                     "lighthouse_metrics": json.dumps(data.lighthouse_metrics, indent=2),
                     "text_summary": text_content,
-                    "format_instructions": self.parser.get_format_instructions(),
                 }
             )
-            return result
+
+            # Parse the raw string
+            parsed_result = self._clean_and_parse_json(raw_result)
+            return parsed_result
+            
         except Exception as e:
+            error_msg = str(e).lower()
+            error_code = "server_error"
+            
+            if "429" in error_msg or "quota" in error_msg or "resource exhausted" in error_msg:
+                error_code = "quota_exceeded"
+            
             logger.error(f"AI generation failed: {e}")
             return {
                 "summary": "Error generating insights.",
-                "recommendations": ["Check server logs."],
+                "action_plan": ["Check server logs."],
+                "technical_analysis": {},
                 "keyword_analysis": "Error",
+                "error": error_code
             }
 
 

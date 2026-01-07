@@ -18,6 +18,13 @@ class Settings(BaseSettings):
         env_file = str(ENV_PATH)
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"
+
+    @property
+    def masked_api_key(self) -> str:
+        if not self.GOOGLE_API_KEY:
+            return "NOT_SET"
+        return f"{self.GOOGLE_API_KEY[:4]}...{self.GOOGLE_API_KEY[-4:]}"
 
 
 @lru_cache()
