@@ -12,3 +12,15 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Audit {
+  id                  String   @id @default(uuid())
+  url                 String
+  metadata            Json
+  lighthouse_metrics  Json
+  technical_analysis  Json
+  readability_analysis Json
+  ai_analysis         Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

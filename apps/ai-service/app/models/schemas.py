@@ -9,15 +9,18 @@ class AnalyzeRequest(BaseModel):
 
 
 class AIResponse(BaseModel):
-    summary: str = Field(description="A 2-3 paragraph executive summary of the SEO analysis.")
-    recommendations: List[str] = Field(
-        description="A list of 3 to 5 actionable recommendations to improve the SEO score."
+    summary: str = Field(description="A 2 paragraph executive summary of the SEO analysis.")
+    action_plan: List[str] = Field(
+        description="A list of 3 to 5 actionable recommendations in the format '**Heading**\\nDescription...'."
+    )
+    technical_analysis: Dict[str, Any] = Field(
+        description="Structured dictionary of technical metrics with values and statuses.", default={}
     )
     keyword_analysis: Optional[str] = Field(
         description="Analysis of keyword usage in headers versus body."
     )
     detailed_report: str = Field(
-        description="A comprehensive markdown-formatted report including tables, bullet points, and categorized insights."
+        description="A comprehensive executive summary report in markdown format."
     )
     seo_score: int = Field(
         description="An overall SEO score from 0 to 100 based on content and technical analysis."
