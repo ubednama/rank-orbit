@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/client"
+  provider        = "prisma-client-js"
+  output          = "../src/generated/client"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -21,6 +22,7 @@ model Audit {
   technical_analysis  Json
   readability_analysis Json
   ai_analysis         Json
+  contentHash         String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }

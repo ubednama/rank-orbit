@@ -89,3 +89,12 @@ pnpm-debug.log*
 # Vercel
 .vercel
 
+tools/start-all-one.sh
+tools/start-all.sh
+tools/start-ide.sh
+
+# Logs
+logs/
+
+# Tools
+tools/

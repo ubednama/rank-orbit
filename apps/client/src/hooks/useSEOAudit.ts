@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
   LighthouseMetrics,
@@ -17,18 +17,39 @@ export interface SEOReportData {
   readability_analysis?: ReadabilityStats;
 }
 
+/**
+ * React hook for managing SEO audit lifecycle via Server-Sent Events
+ *
+ * Features:
+ * - Real-time progress updates via SSE streaming
+ * - Client-side caching with localStorage for instant repeat audits
+ * - URL sanitization awareness and dual-cache strategy
+ * - Graceful error handling with network failure detection
+ *
+ * @param url - Target URL to audit (null to idle)
+ * @returns Audit state including data, loading flags, errors, and sanitized URL
+ */
 export function useSEOAudit(url: string | null) {
   const [reportData, setReportData] = useState<SEOReportData | null>(null);
   const [error, setError] = useState<string>("");
   const [isNetworkError, setIsNetworkError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [sanitizedUrl, setSanitizedUrl] = useState<string | null>(null);
+  const sanitizedUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     let eventSource: EventSource | null = null;
+    setSanitizedUrl(null);
+    sanitizedUrlRef.current = null;
 
     if (url) {
       const cacheKey = `seo_audit_${url}`;
+      /**
+       * Attempt cache retrieval for original URL
+       * Backend may sanitize the URL, in which case we cache under both keys
+       * to handle both user-provided and sanitized URLs
+       */
       const cached = CacheService.get<SEOReportData>(cacheKey);
 
       if (cached) {
@@ -56,6 +77,13 @@ export function useSEOAudit(url: string | null) {
               toast.info(parsed.message);
               break;
 
+            case "sanitized":
+              // URL was modified by backend to remove tracking parameters
+              setSanitizedUrl(parsed.data.sanitizedUrl);
+              sanitizedUrlRef.current = parsed.data.sanitizedUrl;
+              toast.success(`URL sanitized: ${parsed.data.sanitizedUrl}`);
+              break;
+
             case "crawler":
               console.log("Crawler Response:", parsed.data);
               setReportData((prev) => {
@@ -67,11 +95,10 @@ export function useSEOAudit(url: string | null) {
                   readability_analysis: parsed.data.readability_analysis,
                   ai_analysis: null,
                 } as SEOReportData;
-                // Update cache partially? No, wait for AI.
                 return newData;
               });
-              setLoading(false); // Crawler done, page is ready
-              setAiLoading(true); // Now waiting for AI
+              setLoading(false);
+              setAiLoading(true);
               break;
 
             case "ai":
@@ -82,12 +109,28 @@ export function useSEOAudit(url: string | null) {
                   ...prev,
                   ai_analysis: parsed.data.ai_analysis,
                 };
-                // Cache the final result
+                /**
+                 * Dual-cache strategy: store under both original and sanitized URLs
+                 * Ensures instant cache hits regardless of whether user includes tracking params
+                 */
                 CacheService.set(cacheKey, finalData);
+                if (sanitizedUrlRef.current) {
+                  const sanitizedCacheKey = `seo_audit_${sanitizedUrlRef.current}`;
+                  CacheService.set(sanitizedCacheKey, finalData);
+                }
                 return finalData;
               });
               setAiLoading(false);
               toast.success("AI Analysis Complete!");
+              break;
+
+            case "error":
+              console.error("Audit Error:", parsed.message);
+              setError(parsed.message);
+              toast.error(parsed.message);
+              eventSource?.close();
+              setLoading(false);
+              setAiLoading(false);
               break;
 
             case "complete":
@@ -102,9 +145,12 @@ export function useSEOAudit(url: string | null) {
       };
 
       eventSource.onerror = (err) => {
+        // Ignore errors from intentional stream closure
+        if (eventSource?.readyState === EventSource.CLOSED) return;
+
         console.error("EventSource failed:", err);
         setError("Connection lost. Please try again.");
-        setIsNetworkError(true); // Assuming connection issue
+        setIsNetworkError(true);
         toast.error("Connection failed.");
         eventSource?.close();
         setLoading(false);
@@ -125,5 +171,6 @@ export function useSEOAudit(url: string | null) {
     aiLoading,
     error,
     isNetworkError,
+    sanitizedUrl,
   };
 }

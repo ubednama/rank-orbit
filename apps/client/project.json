@@ -4,12 +4,56 @@
   "sourceRoot": "apps/client",
   "projectType": "application",
   "tags": [],
-  "// targets": "to see all targets run: nx show project client --web",
   "targets": {
-    "dev": {
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
       "options": {
-        "port": 3000
+        "outputPath": "dist/apps/client"
+      },
+      "configurations": {
+        "development": {
+          "outputPath": "dist/apps/client"
+        },
+        "production": {}
       }
+    },
+    "serve": {
+      "executor": "@nx/next:server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "client:build",
+        "dev": true,
+        "port": 5000
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "client:build:development",
+          "dev": true
+        },
+        "production": {
+          "buildTarget": "client:build:production",
+          "dev": false
+        }
+      }
+    },
+    "export": {
+      "executor": "@nx/next:export",
+      "options": {
+        "buildTarget": "client:build:production"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/client/jest.config.cts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
     }
   }
 }

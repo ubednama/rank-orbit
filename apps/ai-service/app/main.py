@@ -5,8 +5,10 @@ import logging
 from fastapi import FastAPI
 from app.api.routes import router
 
+from app.core.logging_config import setup_logging
+
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+setup_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI()

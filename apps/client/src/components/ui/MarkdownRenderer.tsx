@@ -1,9 +1,10 @@
 import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ComponentPropsWithoutRef } from "react";
+
 import { cn } from "@/lib/utils";
 
-export type MarkdownComponentProps = ComponentPropsWithoutRef<"div"> & { node?: unknown };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type MarkdownComponentProps = any;
 
 interface MarkdownRendererProps {
   children: string;

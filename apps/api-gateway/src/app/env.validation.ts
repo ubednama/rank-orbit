@@ -19,15 +19,15 @@ export class EnvironmentVariables {
 
   @IsUrl({ require_tld: false })
   @IsString()
-  CRAWLER_SERVICE_URL: string;
+  CRAWLER_SERVICE_URL = "http://localhost:3001";
 
   @IsUrl({ require_tld: false })
   @IsString()
-  AI_SERVICE_URL: string;
+  AI_SERVICE_URL = "http://localhost:8000/api";
 
   @IsString()
   @IsOptional()
-  CORS_ORIGINS = 'http://localhost:4200,http://localhost:3000';
+  CORS_ORIGINS = "http://localhost:4200,http://localhost:3000";
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -20,6 +20,11 @@ export interface AuditStreamEvent {
   data: AuditStreamPayload;
 }
 
+/**
+ * Service responsible for orchestrating SEO audits
+ * Coordinates between crawler, AI analysis, and caching layers
+ * Implements content-based deduplication to optimize AI API usage
+ */
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
@@ -35,6 +40,11 @@ export class AuditService {
     this.aiUrl = this.configService.getOrThrow<string>("AI_SERVICE_URL");
   }
 
+  /**
+   * Delegates crawling to the dedicated crawler microservice
+   * @param dto - URL and crawl configuration
+   * @returns Comprehensive crawl results including lighthouse metrics and parsed content
+   */
   async crawl(dto: CrawlRequestDto): Promise<AiCrawlResponse> {
     try {
       const response = await firstValueFrom(
@@ -49,6 +59,11 @@ export class AuditService {
     }
   }
 
+  /**
+   * Requests AI-powered SEO analysis from the AI microservice
+   * @param dto - Page content and metadata for analysis
+   * @returns AI-generated insights, recommendations, and keyword analysis
+   */
   async analyze(dto: AnalyzeRequestDto): Promise<AiAnalysisResponse> {
     try {
       const response = await firstValueFrom(
@@ -62,12 +77,19 @@ export class AuditService {
     }
   }
 
+  /**
+   * Validates URL accessibility and removes tracking parameters
+   * Sanitizes URLs by stripping utm_*, fbclid, and gclid parameters
+   * @param originalUrl - User-provided URL to validate and clean
+   * @returns Sanitized URL and flag indicating if modifications occurred
+   * @throws Error if URL is malformed or unreachable
+   */
   private async validateAndSanitize(
     originalUrl: string,
   ): Promise<{ sanitizedUrl: string; isSanitized: boolean }> {
     try {
       const parsedUrl = new URL(originalUrl);
-      // Strip tracking parameters
+      // Remove common tracking parameters to normalize cache keys
       const searchParams = new URLSearchParams(parsedUrl.search);
       const keysToRemove = [];
       searchParams.forEach((value, key) => {
@@ -85,7 +107,7 @@ export class AuditService {
 
       const sanitizedUrl = parsedUrl.toString();
 
-      // Validate reachability with HEAD request
+      // Verify URL is accessible before proceeding with expensive crawl operation
       await firstValueFrom(this.httpService.head(sanitizedUrl, { timeout: 5000 }));
 
       return { sanitizedUrl, isSanitized };
@@ -94,11 +116,24 @@ export class AuditService {
     }
   }
 
+  /**
+   * Streams real-time audit progress via Server-Sent Events
+   * Implements intelligent caching and content-based deduplication:
+   * 1. URL validation and sanitization
+   * 2. Redis cache lookup for instant results
+   * 3. Parallel crawl + database hash lookup
+   * 4. SHA-256 content comparison to detect unchanged pages
+   * 5. Conditional AI analysis (only if content changed)
+   * 6. Persistent storage and cache update
+   *
+   * @param url - Target URL to audit
+   * @returns Observable stream of audit events (status, crawler data, AI insights, errors)
+   */
   streamAudit(url: string): Observable<AuditStreamEvent> {
     return new Observable((subscriber) => {
       const execute = async () => {
         try {
-          // 1. Validate & Sanitize
+          // Step 1: Validate URL format and accessibility, sanitize tracking parameters
           subscriber.next({ data: { type: "status", message: "Validating URL..." } });
           const { sanitizedUrl, isSanitized } = await this.validateAndSanitize(url);
 
@@ -119,7 +154,7 @@ export class AuditService {
 
           const cacheKey = `audit:${sanitizedUrl}`;
 
-          // 2. Check Cache
+          // Step 2: Attempt cache retrieval for instant results
           const cached = await this.cacheManager.get<{
             crawlResponse: AiCrawlResponse;
             aiResult: AiAnalysisResponse;
@@ -145,7 +180,7 @@ export class AuditService {
 
           subscriber.next({ data: { type: "status", message: "Starting audit..." } });
 
-          // 3. Parallel Execution: Crawl + DB Lookup
+          // Step 3: Execute crawl and database lookup in parallel for optimal performance
           const crawlDto: CrawlRequestDto = { url: sanitizedUrl };
           const crawlPromise = this.crawl(crawlDto).catch((e) => {
             console.error("DEBUG: Crawl Promise Rejected", e);
@@ -176,7 +211,7 @@ export class AuditService {
             return;
           }
 
-          // 4. Content Hashing & Comparison
+          // Step 4: Generate SHA-256 hash to detect content changes since last audit
           const crypto = await import("crypto");
           const pageContent = crawlResponse.page_content || "";
           const newHash = crypto.createHash("sha256").update(pageContent).digest("hex");
@@ -184,7 +219,7 @@ export class AuditService {
           let aiResult: AiAnalysisResponse;
 
           if (latestAudit && latestAudit.contentHash === newHash && latestAudit.ai_analysis) {
-            // MATCH: Reuse AI
+            // Content unchanged: reuse existing AI analysis to save API costs and time
             this.logger.log(`Content unchanged for ${sanitizedUrl}. Reusing stored AI analysis.`);
             subscriber.next({
               data: {
@@ -196,7 +231,7 @@ export class AuditService {
               ai_analysis: latestAudit.ai_analysis as unknown as AiAnalysisResponse["ai_analysis"],
             };
           } else {
-            // MISMATCH: Generate AI
+            // Content modified or first audit: generate fresh AI insights
             this.logger.debug("Generating AI insights");
             subscriber.next({ data: { type: "status", message: "Generating AI insights..." } });
             const analyzeDto = {
@@ -210,29 +245,27 @@ export class AuditService {
 
           subscriber.next({ data: { type: "ai", data: aiResult } });
 
-          // 5. Save and Cache
+          // Step 5: Persist audit results for history and future deduplication
           try {
             this.logger.debug("Saving to DB");
+            /* eslint-disable @typescript-eslint/no-explicit-any */
             await db.audit.create({
               data: {
                 url: sanitizedUrl,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 metadata: crawlResponse.metadata as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 lighthouse_metrics: crawlResponse.lighthouse_metrics as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 technical_analysis: crawlResponse.technical_analysis as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 readability_analysis: crawlResponse.readability_analysis as any,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ai_analysis: aiResult.ai_analysis as any,
                 contentHash: newHash,
               },
             });
+            /* eslint-enable @typescript-eslint/no-explicit-any */
           } catch (dbError) {
             this.logger.error(`Failed to save to DB: ${dbError.message}`);
           }
 
+          // Cache results for 24 hours to serve subsequent requests instantly
           this.logger.debug("Caching result");
           await this.cacheManager.set(cacheKey, { crawlResponse, aiResult }, 86400 * 1000);
 

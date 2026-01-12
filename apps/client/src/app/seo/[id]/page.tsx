@@ -17,7 +17,7 @@ function SEOReportContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get("url");
 
-  const { data, loading, aiLoading, error, isNetworkError } = useSEOAudit(url);
+  const { data, loading, aiLoading, error, isNetworkError, sanitizedUrl } = useSEOAudit(url);
 
   if (!url) {
     return (
@@ -38,7 +38,29 @@ function SEOReportContent() {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[128px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-8">
-        <ReportHeader url={url} metadata={data?.metadata} loading={loading} />
+        {sanitizedUrl && sanitizedUrl !== url && (
+          <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center text-sm">
+            <p className="text-yellow-700 dark:text-yellow-300">
+              <span className="font-bold">Note:</span> Your URL was sanitized for better accuracy.
+            </p>
+            <div className="flex gap-4 mt-2 md:mt-0">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Original:</span>
+                <code className="bg-yellow-200/50 dark:bg-yellow-900/50 px-2 py-0.5 rounded text-xs">
+                  {url}
+                </code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Sanitized:</span>
+                <code className="bg-green-200/50 dark:bg-green-900/50 px-2 py-0.5 rounded text-xs">
+                  {sanitizedUrl}
+                </code>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ReportHeader url={sanitizedUrl || url} metadata={data?.metadata} loading={loading} />
 
         {/* Dashboard Content - Always render (show skeletons if loading) */}
         {(loading || data) && (

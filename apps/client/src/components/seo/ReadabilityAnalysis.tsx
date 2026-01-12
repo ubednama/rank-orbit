@@ -9,6 +9,7 @@ interface ReadabilityAnalysisProps {
 }
 
 export function ReadabilityAnalysis({ stats }: ReadabilityAnalysisProps) {
+  if (!stats) return null;
   const getDifficulty = (grade: number) => {
     if (grade <= 6)
       return {

@@ -4,10 +4,13 @@ import { AuditModule } from "../audit/audit.module";
 import { HealthController } from "../health/health.controller";
 import { validate } from "./env.validation";
 import { CacheModule, CACHE_MANAGER } from "@nestjs/cache-manager";
-import * as redisStore from "cache-manager-redis-store";
 import { LoggingModule } from "../logging/logging.module";
 import { Cache } from "cache-manager";
 import { db } from "@db";
+import KeyvRedis from "@keyv/redis";
+import Keyv from "keyv";
+import { CacheableMemory } from "cacheable";
+import { createClient } from "redis";
 
 @Module({
   imports: [
@@ -19,18 +22,32 @@ import { db } from "@db";
       isGlobal: true,
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const url = configService.get("REDIS_URL") || "redis://localhost:6379";
-        const isTls = url.startsWith("rediss://");
-        return {
-          store: redisStore,
+        let url = configService.get("REDIS_URL") || "redis://localhost:6379";
+
+        // Upstash requires TLS, but sometimes provides redis:// URL.
+        // node-redis throws if tls:true is used with redis:// scheme.
+        if (url.includes("upstash") && url.startsWith("redis://")) {
+          url = url.replace("redis://", "rediss://");
+        }
+
+        const client = createClient({
           url,
-          ttl: 86400, // 24 hours
-          // Upstash/TLS support
-          ...(isTls && {
-            tls: {
-              rejectUnauthorized: false,
-            },
-          }),
+          // When url is rediss://, tls is implied. We just need rejectUnauthorized: false for some setups if needed.
+          socket: {
+            tls: url.startsWith("rediss://"),
+            rejectUnauthorized: false,
+          },
+        });
+        // Handle error events to prevent crashing
+        client.on("error", (err) => console.error("Redis Client Error", err));
+
+        return {
+          stores: [
+            new Keyv({
+              store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
+            }),
+            new KeyvRedis(client),
+          ],
         };
       },
       inject: [ConfigService],
@@ -44,29 +61,29 @@ import { db } from "@db";
 export class AppModule implements OnModuleInit {
   private readonly logger = new Logger(AppModule.name);
 
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private configService: ConfigService,
+  ) {}
 
   async onModuleInit() {
-    // Redis Connection Logging
+    // Redis/Cache Functional Test
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const store = (this.cacheManager as any).store;
-      if (store && typeof store.getClient === "function") {
-        const client = store.getClient();
-        if (client) {
-          client.on("connect", () => {
-            this.logger.log("✅ Redis connected");
-          });
-          client.on("error", (error) => {
-            this.logger.error(`❌ Redis failed: ${error}`);
-          });
-          this.logger.log("✅ Redis client initialized");
-        }
+      const testKey = "redis_connection_test";
+      const testValue = "test_value_" + Date.now();
+
+      await this.cacheManager.set(testKey, testValue, 10000);
+      const retrieved = await this.cacheManager.get(testKey);
+
+      if (retrieved === testValue) {
+        this.logger.log("✅ Cache functionality test passed (Redis/Keyv)");
       } else {
-        this.logger.warn("⚠️  Redis store not available - caching will use in-memory fallback");
+        this.logger.error(
+          `❌ Cache functionality test failed: Expected ${testValue}, got ${retrieved}`,
+        );
       }
     } catch (error) {
-      this.logger.error(`❌ Redis setup error: ${error}`);
+      this.logger.error(`❌ Cache setup/connection error: ${error}`);
     }
 
     // Database Logging

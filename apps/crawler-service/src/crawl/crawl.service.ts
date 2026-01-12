@@ -10,10 +10,22 @@ import {
 import { spawn } from "child_process";
 import * as path from "path";
 
+/**
+ * Web crawling and analysis service using Puppeteer and Lighthouse
+ * Extracts SEO metadata, calculates readability metrics, and runs performance audits
+ */
 @Injectable()
 export class CrawlService {
   private readonly logger = new Logger(CrawlService.name);
 
+  /**
+   * Orchestrates full page analysis including metadata extraction and readability calculation
+   * Launches headless browser, extracts structured data, and cleans content for AI processing
+   *
+   * @param url - Target URL to analyze
+   * @returns Complete crawl results with metadata, sanitized content, and readability stats
+   * @throws Error if page fails to load or critical extraction errors occur
+   */
   async extractMetadata(url: string): Promise<AiCrawlResponse> {
     let browser;
     try {
@@ -59,7 +71,11 @@ export class CrawlService {
 
       const htmlContent = await page.content();
 
-      // Sanitize HTML Content for AI Context
+      /**
+       * Content Sanitization Pipeline:
+       * Remove all non-content elements to minimize AI token usage
+       * while preserving semantic structure for analysis
+       */
       const $ = cheerio.load(htmlContent);
       $("script").remove();
       $("style").remove();
@@ -67,12 +83,12 @@ export class CrawlService {
       $("noscript").remove();
       $("iframe").remove();
       $("link").remove();
-      $("meta").remove(); // Metadata is already extracted separately
+      $("meta").remove(); // Metadata already extracted programmatically
 
-      // Get cleaned body text and minimal HTML structure
+      // Extract clean body content with normalized whitespace
       const page_content = $("body").html()?.replace(/\s+/g, " ").trim() || "";
 
-      // Calculate Readability
+      // Generate readability metrics using Flesch Reading Ease algorithm
       const readability_analysis = this.calculateReadability(page_content);
 
       return { metadata, page_content, readability_analysis };
@@ -84,9 +100,21 @@ export class CrawlService {
     }
   }
 
+  /**
+   * Calculates Flesch Reading Ease score and keyword density analysis
+   *
+   * Algorithm:
+   * - Flesch score = 206.835 - 1.015(words/sentences) - 84.6(syllables/words)
+   * - Lower scores indicate more complex text
+   * - Extracts top 12 non-stopword keywords with frequency percentages
+   *
+   * @param content - HTML or plain text content to analyze
+   * @returns Readability statistics including grade level, word count, and keyword density
+   */
   calculateReadability(content: string): ReadabilityStats | null {
     if (!content) return null;
-    // Strip HTML for word counting
+
+    // Strip HTML tags for accurate word/sentence counting
     const text = content
       .replace(/<[^>]*>?/gm, " ")
       .replace(/\s+/g, " ")
@@ -98,7 +126,7 @@ export class CrawlService {
     const wordCount = words.length;
     const sentenceCount = sentences.length || 1;
 
-    // Syllable heuristic
+    // Heuristic syllable counter using vowel cluster detection
     const countSyllables = (word: string) => {
       word = word.toLowerCase().replace(/[^a-z]/g, "");
       if (word.length <= 3) return 1;
@@ -111,7 +139,11 @@ export class CrawlService {
     const totalSyllables = words.reduce((acc, w) => acc + countSyllables(w), 0);
     const score = 0.39 * (wordCount / sentenceCount) + 11.8 * (totalSyllables / wordCount) - 15.59;
 
-    // Keyword Density
+    /**
+     * Keyword density calculation:
+     * Filters stopwords, digit-only tokens, and short words (<= 3 chars)
+     * Provides insight into content focus and potential keyword stuffing
+     */
     const frequency: Record<string, number> = {};
     const stopWords = new Set([
       "the",
@@ -163,6 +195,13 @@ export class CrawlService {
     };
   }
 
+  /**
+   * Categorizes Lighthouse metrics into human-readable technical analysis
+   * Maps raw scores and Core Web Vitals to qualitative assessments
+   *
+   * @param metrics - Raw Lighthouse performance data
+   * @returns Categorized technical analysis with status indicators (Good/Moderate/Poor/Critical)
+   */
   calculateTechnicalAnalysis(metrics: LighthouseMetrics): TechnicalAnalysis {
     const results: any = {};
 
@@ -173,7 +212,7 @@ export class CrawlService {
       return 0;
     };
 
-    // Performance (Assuming 0-1)
+    // Normalize performance score to 0-100 range if provided as decimal
     let perf = getVal("performance_score");
     if (perf <= 1) perf *= 100;
     results["Performance"] = {
@@ -181,7 +220,7 @@ export class CrawlService {
       status: perf < 50 ? "Poor" : perf < 90 ? "Needs Work" : "Excellent",
     };
 
-    // Accessibility
+    // Accessibility score evaluation based on WCAG compliance
     let acc = getVal("accessibility_score");
     if (acc <= 1) acc *= 100;
     results["Accessibility"] = {
@@ -189,35 +228,35 @@ export class CrawlService {
       status: acc < 90 ? "Needs Work" : "Excellent",
     };
 
-    // LCP (s)
+    // Largest Contentful Paint: primary loading performance metric
     const lcp = getVal("lcp");
     results["LCP"] = {
       value: `${lcp} s`,
       status: lcp > 4.0 ? "Critical" : lcp > 2.5 ? "Needs Work" : "Good",
     };
 
-    // CLS
+    // Cumulative Layout Shift: visual stability indicator
     const cls = getVal("cls");
     results["CLS"] = {
       value: cls,
       status: cls > 0.25 ? "Poor" : cls > 0.1 ? "Needs Work" : "Good",
     };
 
-    // TBT (ms)
+    // Total Blocking Time: interactivity metric
     const tbt = getVal("tbt");
     results["TBT"] = {
       value: `${Math.round(tbt)} ms`,
       status: tbt > 600 ? "Critical" : tbt > 200 ? "Moderate" : "Good",
     };
 
-    // FCP (s)
+    // First Contentful Paint: perceived load speed
     const fcp = getVal("fcp");
     results["FCP"] = {
       value: `${fcp} s`,
       status: fcp > 3.0 ? "Poor" : fcp > 1.8 ? "Moderate" : "Good",
     };
 
-    // Speed Index (s)
+    // Speed Index: visual progress metric
     const si = getVal("speed_index");
     results["Speed Index"] = {
       value: `${si} s`,
@@ -227,14 +266,26 @@ export class CrawlService {
     return results;
   }
 
+  /**
+   * Executes Lighthouse audit in isolated worker process
+   * Isolates Lighthouse in separate process to prevent memory leaks and crashes
+   *
+   * Architecture:
+   * - Main service spawns Node.js child process
+   * - Worker runs Lighthouse with desktop config
+   * - Results communicated via stdout as JSON
+   * - Errors handled gracefully with fallback metrics
+   *
+   * @param url - URL to audit with Lighthouse
+   * @returns Lighthouse performance metrics or error placeholders on failure
+   */
   async runLighthouse(url: string): Promise<LighthouseMetrics> {
     return new Promise((resolve) => {
-      // Locate the worker script
-      // In dev (nx serve), assets are in dist/apps/crawler-service/assets
-      // The CWD when running "node dist/apps/crawler-service/main.js" is the workspace root
-      // So we need to point to dist/apps/crawler-service/assets/lighthouse-worker.mjs
-
-      // We can try to resolve it relative to the current working directory
+      /**
+       * Worker script location:
+       * Development: dist/apps/crawler-service/assets/lighthouse-worker.mjs
+       * CWD is workspace root when running compiled output
+       */
       const workerPath = path.join(
         process.cwd(),
         "dist/apps/crawler-service/assets/lighthouse-worker.mjs",
@@ -260,7 +311,7 @@ export class CrawlService {
           this.logger.error(`Lighthouse worker failed with code ${code}`);
           this.logger.error(`Worker stderr: ${stderrData}`);
 
-          // Try to parse error from stderr if it matches JSON structure
+          // Attempt to parse structured error response from worker
           try {
             const errorJson = JSON.parse(stderrData);
             resolve(this.getErrorMetrics(errorJson.error || "Unknown Worker Error"));
@@ -271,7 +322,7 @@ export class CrawlService {
         }
 
         try {
-          // find the last line that looks like JSON, in case of extra logs
+          // Extract last JSON line from stdout (worker may emit logs before final result)
           const lines = stdoutData.trim().split("\n");
           const jsonLine = lines[lines.length - 1];
           const metrics = JSON.parse(jsonLine);
@@ -290,6 +341,13 @@ export class CrawlService {
     });
   }
 
+  /**
+   * Generates placeholder metrics for failed Lighthouse audits
+   * Prevents downstream errors by returning consistent structure
+   *
+   * @param message - Error description for troubleshooting
+   * @returns Mock metrics with N/A values and error message
+   */
   private getErrorMetrics(message: string): LighthouseMetrics {
     return {
       performance_score: 0,
