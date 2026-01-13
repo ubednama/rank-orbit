@@ -18,6 +18,10 @@
     "src/**/*.spec.js",
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "specs/**/*.ts",
+    "specs/**/*.tsx",
+    "specs/**/*.js",
+    "specs/**/*.jsx"
   ]
 }

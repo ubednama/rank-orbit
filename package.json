@@ -145,6 +145,24 @@
   },
   "scripts": {
     "check": "nx run-many -t build --skip-nx-cache",
+    "postinstall": "prisma generate --schema=libs/db/prisma/schema.prisma",
     "prepare": "husky"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "@nestjs/core",
+      "@parcel/watcher",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "@swc/core",
+      "esbuild",
+      "less",
+      "nx",
+      "prisma",
+      "puppeteer",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

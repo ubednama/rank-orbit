@@ -7,6 +7,12 @@ export default [
   ...baseConfig,
   ...nx.configs["flat/react-typescript"],
   {
-    ignores: [".next/**/*"],
+    ignores: [".next/**/*", "**/generated/**/*"],
+  },
+  {
+    files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    rules: {
+      "@next/next/no-html-link-for-pages": ["error", "apps/client/src/app"],
+    },
   },
 ];
