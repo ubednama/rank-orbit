@@ -26,7 +26,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
   const hostname = url ? new URL(url).hostname : "example.com";
 
   return (
-    <div className="space-y-10 m-2 sm:m-0 p-1 sm:p-5 bg-card border rounded-xl shadow-sm">
+    <div className="space-y-10 p-1 sm:p-5 bg-card border rounded-xl shadow-sm">
       {/* Google Search Previews */}
       <div className="space-y-4">
         <h4 className="font-semibold text-lg flex items-center gap-2">
