@@ -57,11 +57,11 @@ export default function AIInsightsSection({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0 space-y-3 sm:space-y-10">
+      <CardContent className="space-y-8 sm:space-y-10">
         <AISeoScore data={data} />
 
         {/* 1. Analysis Summary */}
-        <div className="bg-linear-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border border-indigo-100/50 dark:border-white/5">
+        <div className="bg-linear-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 p-0 sm:p-6 rounded-2xl sm:border border-indigo-100/50 dark:border-white/5 sm:shadow-sm">
           <div className="text-gray-700 dark:text-gray-200">
             <h4 className="flex items-center gap-2 font-semibold text-lg mb-4 text-indigo-700 dark:text-indigo-300">
               <Sparkles className="w-5 h-5" />
@@ -79,7 +79,7 @@ export default function AIInsightsSection({
               Technical Health Check
             </h4>
             <div className="bg-[#f8fafc] dark:bg-white/5 border rounded-xl overflow-hidden shadow-sm">
-              <div className="grid grid-cols-3 gap-4 px-4 py-3 bg-indigo-50/80 dark:bg-white/10 font-semibold text-sm text-indigo-900 dark:text-indigo-100 border-b border-indigo-100/50 dark:border-white/10 uppercase tracking-wide">
+              <div className="grid grid-cols-3 gap-4 px-3 py-2 sm:px-4 sm:py-3 bg-indigo-50/80 dark:bg-white/10 font-semibold text-sm text-indigo-900 dark:text-indigo-100 border-b border-indigo-100/50 dark:border-white/10 uppercase tracking-wide">
                 <div>Metric</div>
                 <div>Value</div>
                 <div>Status</div>
@@ -88,7 +88,7 @@ export default function AIInsightsSection({
                 ([key, metric]: [string, { value: string | number; status: string }]) => (
                   <div
                     key={key}
-                    className="grid grid-cols-3 gap-4 px-4 py-3 border-b border-gray-100 dark:border-white/5 last:border-0 text-sm items-center hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors"
+                    className="grid grid-cols-3 gap-4 px-3 py-2 sm:px-4 sm:py-3 border-b border-gray-100 dark:border-white/5 last:border-0 text-sm items-center hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors"
                   >
                     <div className="font-medium text-gray-700 dark:text-gray-200">{key}</div>
                     <div className="font-mono text-gray-600 dark:text-gray-400">{metric.value}</div>
@@ -124,7 +124,7 @@ export default function AIInsightsSection({
 
         {/* 3. Action Plan Container */}
         {data.action_plan && data.action_plan.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             <h4 className="flex items-center gap-2 font-semibold text-lg text-indigo-700 dark:text-indigo-300">
               <Zap className="w-5 h-5" />
               Strategic Action Plan
@@ -133,7 +133,7 @@ export default function AIInsightsSection({
               {data.action_plan.map((rec: string, i: number) => (
                 <div
                   key={i}
-                  className="flex gap-4 bg-white/60 dark:bg-white/5 p-5 rounded-xl border border-indigo-50/50 dark:border-white/5 hover:border-indigo-200/50 transition-colors shadow-sm"
+                  className="flex gap-4 bg-white/60 dark:bg-white/5 p-0 sm:p-5 rounded-xl sm:border border-indigo-50/50 dark:border-white/5 hover:border-indigo-200/50 transition-colors sm:shadow-sm"
                 >
                   <div className="shrink-0 mt-1">
                     <div className="w-6 h-6 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs ring-2 ring-white dark:ring-white/10 shadow-sm">
@@ -168,12 +168,12 @@ export default function AIInsightsSection({
 
         {/* 4. Full Summary Report */}
         {data.detailed_report && (
-          <div className="space-y-4 pt-4 border-t border-dashed border-gray-200 dark:border-gray-800">
+          <div className="sm:space-y-4 space-y-1 pt-4 border-t border-dashed border-gray-200 dark:border-gray-800">
             <h4 className="flex items-center gap-2 font-semibold text-lg text-indigo-700 dark:text-indigo-300">
               <BarChart className="w-5 h-5" />
               Full Audit Report
             </h4>
-            <div className="bg-white/40 dark:bg-white/5 p-8 rounded-xl border border-indigo-50/50 dark:border-white/5 shadow-sm">
+            <div className="bg-white/40 dark:bg-white/5 p-0 sm:p-8 rounded-xl sm:border border-indigo-50/50 dark:border-white/5 sm:shadow-sm">
               <MarkdownRenderer>{data.detailed_report}</MarkdownRenderer>
               {/* SEO Identity/Signature could go here if needed, but excluded from text report per instructions */}
             </div>

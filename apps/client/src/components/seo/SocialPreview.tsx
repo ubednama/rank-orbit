@@ -170,7 +170,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
           Meta Data Health Check
         </h4>
 
-        <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4">
           {/* Image Check */}
           <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border">
             <div
