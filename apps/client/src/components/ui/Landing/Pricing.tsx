@@ -68,7 +68,7 @@ export default function Pricing() {
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
             Simple, transparent pricing
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg">
             Start for free, upgrade as you grow. No hidden fees.
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function Pricing() {
               )}
 
               <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   {plan.name}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">{plan.description}</p>

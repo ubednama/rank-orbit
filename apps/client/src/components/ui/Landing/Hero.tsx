@@ -57,42 +57,42 @@ export default function Hero() {
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
+          <h1 className="text-4xl md:text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
             Master Your SEO <br />
             <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
               With AI Precision
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10">
+          <p className="text-base md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10">
             Instant, automated SEO audits powered by advanced AI. Uncover hidden opportunities,
             optimize performance, and rank higher.
           </p>
 
           <form onSubmit={handleAnalyze} className="max-w-xl mx-auto relative group">
             <div className="absolute -inset-1 bg-linear-to-r from-indigo-500 to-purple-500 rounded-full opacity-30 dark:opacity-70 group-hover:opacity-60 dark:group-hover:opacity-100 blur-sm transition duration-200" />
-            <div className="relative flex items-center bg-white dark:bg-black rounded-full p-2 border border-gray-200 dark:border-white/10 shadow-lg dark:shadow-none">
-              <Search className="w-5 h-5 text-gray-400 ml-4" />
+            <div className="relative flex items-center bg-white dark:bg-black rounded-full p-1 md:p-2 border border-gray-200 dark:border-white/10 shadow-lg dark:shadow-none">
+              <Search className="w-5 h-5 text-gray-400 ml-3 md:ml-4" />
               <input
                 type="url"
-                placeholder="Enter your website URL (e.g. https://example.com)"
-                className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 px-4 py-2 outline-hidden"
+                placeholder="Enter your website URL"
+                className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 px-3 md:px-4 py-2 text-sm md:text-base outline-hidden"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
               />
               <button
                 type="submit"
-                className="bg-gray-900 dark:bg-white text-white dark:text-black rounded-full px-6 py-3 font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors flex items-center space-x-2"
+                className="bg-gray-900 dark:bg-white text-white dark:text-black rounded-full px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors flex items-center space-x-2"
               >
                 <span>Audit</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 hidden sm:block" />
               </button>
             </div>
           </form>
 
           {/* Stats / Trust Badges */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto text-gray-500 text-sm">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 max-w-3xl mx-auto text-gray-500 text-sm">
             <div className="flex items-center justify-center space-x-2">
               <Zap className="w-4 h-4 text-yellow-400" />
               <span>Lightning Fast Analysis</span>

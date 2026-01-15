@@ -11,14 +11,14 @@ const features = [
 
 export default function SEOExplain() {
   return (
-    <section className="py-24 bg-gray-50 dark:bg-white/5">
+    <section className="py-12 md:py-24 bg-gray-50 dark:bg-white/5">
       <div className="w-full max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 space-y-8">
-            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-linear-to-r from-gray-900 to-indigo-600 dark:from-white dark:to-indigo-400">
+            <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-gray-900 dark:text-white bg-linear-to-r from-gray-900 to-indigo-600 dark:from-white dark:to-indigo-400">
               Complete SEO Intelligence
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+            <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
               Rank Orbit goes beyond basic audits. Our AI analyzes thousands of data points to
               provide actionable insights that actually move the needle. From technical fixes to
               content strategy, we cover it all.

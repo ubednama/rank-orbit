@@ -78,18 +78,18 @@ export default function Testimonials() {
   }, [controls, isPaused]);
 
   return (
-    <section className="py-24 bg-white dark:bg-black relative overflow-hidden">
+    <section className="py-12 md:py-24 bg-white dark:bg-black relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent"></div>
 
       <div className="w-full max-w-7xl mx-auto px-6 relative z-10 mb-12">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-6">
             Loved by thousands of <br />
             <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500">
               Global Creators
             </span>
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg">
             Empowering comprehensive SEO strategies for everyone, everywhere.
           </p>
         </div>
@@ -108,7 +108,7 @@ export default function Testimonials() {
         <div className="absolute top-0 right-0 h-full w-24 bg-linear-to-l from-white dark:from-black to-transparent z-20 pointer-events-none" />
 
         <motion.div
-          className="flex space-x-6 px-6 w-max"
+          className="flex space-x-6 px-3 sm:px-6 w-max"
           animate={controls}
           drag="x"
           dragConstraints={{ left: -2000, right: 0 }}
@@ -116,7 +116,7 @@ export default function Testimonials() {
           {allTestimonials.map((testimonial, index) => (
             <motion.div
               key={index}
-              className="w-[300px] md:w-[400px] shrink-0 p-8 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none"
+              className="w-[300px] md:w-[400px] shrink-0 p-4 sm:p-8 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none"
               whileHover={{ scale: 1.02 }}
             >
               <div className="flex space-x-1 mb-6">
@@ -131,7 +131,7 @@ export default function Testimonials() {
                   />
                 ))}
               </div>
-              <p className="text-gray-700 dark:text-gray-300 text-lg mb-6 leading-relaxed line-clamp-4">
+              <p className="text-gray-700 dark:text-gray-300 text-base md:text-lg mb-6 leading-relaxed line-clamp-4">
                 "{testimonial.content}"
               </p>
               <div className="flex items-center space-x-4">

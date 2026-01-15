@@ -28,30 +28,35 @@ const reasons = [
 
 export default function WhySEO() {
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section className="py-12 md:py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-linear-to-b from-transparent via-blue-50/50 to-transparent dark:via-blue-900/10 pointer-events-none" />
 
       <div className="w-full max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 sm:mb-6 bg-clip-text text-gray-900 dark:text-white bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
             Why SEO Matters?
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
+          <p className="text-base md:text-lg text-gray-600 dark:text-gray-400">
             Search Engine Optimization isn't just about rankings; it's about building a sustainable
             digital presence that drives real business growth.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
           {reasons.map((reason, index) => (
             <div
               key={index}
-              className="p-6 rounded-2xl bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 transition-all hover:bg-white dark:hover:bg-white/10 group"
+              className="p-3 sm:p-6 rounded-2xl bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 transition-all hover:bg-white dark:hover:bg-white/10 group"
             >
-              <div className="w-12 h-12 mb-4 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
-                <reason.icon className="w-6 h-6" />
+              <div className="flex items-center gap-4 mb-2 sm:mb-4">
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
+                  <reason.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white md:hidden">
+                  {reason.title}
+                </h3>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white hidden md:block">
                 {reason.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">

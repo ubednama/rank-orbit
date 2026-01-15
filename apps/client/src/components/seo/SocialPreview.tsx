@@ -26,14 +26,14 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
   const hostname = url ? new URL(url).hostname : "example.com";
 
   return (
-    <div className="space-y-10 p-5 bg-card border rounded-xl shadow-sm">
+    <div className="space-y-10 p-2 sm:p-5 bg-card border rounded-xl shadow-sm">
       {/* Google Search Previews */}
       <div className="space-y-4">
         <h4 className="font-semibold text-lg flex items-center gap-2">
           <Smartphone className="w-5 h-5 text-blue-500" />
           Google Search Result Preview
         </h4>
-        <div className="flex flex-col md:flex-row justify-between gap-6 bg-gray-50 dark:bg-black/20 p-6 rounded-xl border border-dashed">
+        <div className="flex flex-col md:flex-row justify-between gap-6 bg-gray-50 dark:bg-black/20 sm:p-6 rounded-xl sm:border border-dashed">
           {/* Mobile Result */}
           <div className="space-y-2">
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
@@ -172,7 +172,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
 
         <div className="grid grid-cols-3 gap-2 md:gap-4">
           {/* Image Check */}
-          <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+          <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border">
             <div
               className={cn(
                 "p-1.5 rounded-full shrink-0",
@@ -191,7 +191,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
 
           {/* Ratio Check */}
           {image && (
-            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+            <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border">
               <div
                 className={cn(
                   "p-1.5 rounded-full shrink-0",
@@ -216,7 +216,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
           )}
 
           {/* Title Length */}
-          <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+          <div className="flex items-start gap-3 p-2 sm:p-3 bg-muted/30 rounded-lg border">
             <div
               className={cn(
                 "p-1.5 rounded-full shrink-0",

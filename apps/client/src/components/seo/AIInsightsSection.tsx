@@ -57,7 +57,7 @@ export default function AIInsightsSection({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-10">
+      <CardContent className="p-0 space-y-3 sm:space-y-10">
         <AISeoScore data={data} />
 
         {/* 1. Analysis Summary */}

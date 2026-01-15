@@ -43,7 +43,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="features" className="py-24 relative overflow-hidden">
+    <section id="features" className="py-12 md:py-24 relative overflow-hidden">
       <div className="w-full max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
@@ -52,7 +52,7 @@ export default function Features() {
               Rank #1
             </span>
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg">
             Rank Orbit combines traditional SEO tools with modern AI to give you the competitive
             edge.
           </p>
@@ -67,12 +67,17 @@ export default function Features() {
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ y: -5 }}
-              className="p-8 rounded-2xl bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-white dark:hover:bg-white/10 transition-all backdrop-blur-xs group shadow-xs hover:shadow-lg dark:shadow-none"
+              className="p-4 sm:p-8 rounded-2xl bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-white dark:hover:bg-white/10 transition-all backdrop-blur-xs group shadow-xs hover:shadow-lg dark:shadow-none"
             >
-              <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-black/50 border border-gray-200 dark:border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                {feature.icon}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-black/50 border border-gray-200 dark:border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white md:hidden">
+                  {feature.title}
+                </h3>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 hidden md:block">
                 {feature.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">

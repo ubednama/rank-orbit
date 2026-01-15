@@ -96,16 +96,19 @@ function MetricCard({
         className,
       )}
     >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-          <Icon className="w-4 h-4 mr-2" />
-          {title}
+      <CardHeader className="pb-1 p-2 md:pb-2 md:p-6">
+        <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-start">
+          <Icon className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 shrink-0 mt-[2px] md:mt-[3px]" />
+          <span className="text-xs md:text-sm leading-tight">{title}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">{metric?.value || "—"}</div>
+      <CardContent className="p-2 md:p-6 pt-0 md:pt-0">
+        <div className="text-xl md:text-3xl font-bold">{metric?.value || "—"}</div>
         {metric && (
-          <Badge variant="outline" className={`mt-2 ${colorClass} border shadow-none`}>
+          <Badge
+            variant="outline"
+            className={`mt-1 md:mt-2 text-[10px] md:text-xs px-1.5 py-0 md:px-2.5 md:py-0.5 ${colorClass} border shadow-none`}
+          >
             {status}
           </Badge>
         )}

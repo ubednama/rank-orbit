@@ -1,13 +1,14 @@
 "use client";
 
 import { Github, Linkedin, Twitter } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   return (
     <footer className="glass mt-12 border-t border-gray-200/50 dark:border-gray-700/50">
       <div className="w-full max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="col-span-1 sm:col-span-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="col-span-2">
             <h3 className="text-xl font-bold gradient-text mb-4">SEO Performance Analyzer</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md">
               Analyze your website&apos;s SEO performance with AI-powered insights and actionable
@@ -50,36 +51,36 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
               <li>
-                <a
+                <Link
                   href="/#features"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   SEO Analysis
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#features"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   AI Insights
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#features"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   Performance Metrics
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#features"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   Reports
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

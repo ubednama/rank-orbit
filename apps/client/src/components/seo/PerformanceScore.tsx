@@ -23,7 +23,7 @@ export default function PerformanceScore({
       )}
     >
       <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      <CardHeader className="pb-2">
+      <CardHeader className="p-2 sm:pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
           <Award className="w-4 h-4 mr-2 text-indigo-500" />
           Performance Score
@@ -36,7 +36,7 @@ export default function PerformanceScore({
           <>
             <div className="flex items-baseline space-x-2">
               <span
-                className={`text-6xl font-black ${
+                className={`text-2xl md:text-6xl font-black ${
                   (score || 0) >= 90
                     ? "text-green-600 dark:text-green-500"
                     : (score || 0) >= 50
@@ -46,7 +46,7 @@ export default function PerformanceScore({
               >
                 {Math.round(score || 0)}
               </span>
-              <span className="text-lg text-muted-foreground font-medium">/ 100</span>
+              <span className="text-base sm:text-lg text-muted-foreground font-medium">/ 100</span>
             </div>
             <div className="mt-4 h-2 w-full bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
               <div
