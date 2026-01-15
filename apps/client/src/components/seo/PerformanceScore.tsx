@@ -27,14 +27,28 @@ export default function PerformanceScore({
         ) : (
           <>
             <div className="flex items-baseline space-x-2">
-              <span className="text-6xl font-black text-transparent bg-clip-text bg-linear-to-br from-indigo-500 to-purple-600">
+              <span
+                className={`text-6xl font-black ${
+                  (score || 0) >= 90
+                    ? "text-green-600 dark:text-green-500"
+                    : (score || 0) >= 50
+                    ? "text-yellow-600 dark:text-yellow-500"
+                    : "text-red-600 dark:text-red-500"
+                }`}
+              >
                 {Math.round(score || 0)}
               </span>
               <span className="text-lg text-muted-foreground font-medium">/ 100</span>
             </div>
             <div className="mt-4 h-2 w-full bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-linear-to-r from-indigo-500 to-purple-600 transition-all duration-1000"
+                className={`h-full transition-all duration-1000 ${
+                  (score || 0) >= 90
+                    ? "bg-green-500"
+                    : (score || 0) >= 50
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
+                }`}
                 style={{ width: `${Math.round(score || 0)}%` }}
               />
             </div>

@@ -34,13 +34,13 @@ function SEOReportContent() {
   return (
     <div className="min-h-screen relative bg-gray-50 dark:bg-black pt-24 pb-12 transition-colors duration-500">
       {/* Background Blobs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[128px] pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 dark:bg-purple-900/10 rounded-full blur-[128px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 dark:bg-indigo-900/10 rounded-full blur-[128px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-8">
         {sanitizedUrl && sanitizedUrl !== url && (
           <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center text-sm">
-            <p className="text-yellow-700 dark:text-yellow-300">
+            <p className="text-yellow-800 dark:text-yellow-200">
               <span className="font-bold">Note:</span> Your URL was sanitized for better accuracy.
             </p>
             <div className="flex gap-4 mt-2 md:mt-0">
@@ -76,7 +76,7 @@ function SEOReportContent() {
                 score={data?.lighthouse_metrics?.performance_score}
                 loading={loading}
               />
-              <CoreWebVitals analysis={data?.technical_analysis} isLoading={loading} />
+              <CoreWebVitals metrics={data?.lighthouse_metrics} isLoading={loading} />
             </div>
 
             {data?.metadata && (

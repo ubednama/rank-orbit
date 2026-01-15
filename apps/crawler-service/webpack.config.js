@@ -22,4 +22,11 @@ module.exports = {
       sourceMap: true,
     }),
   ],
+  externals: {
+    mqtt: "commonjs mqtt",
+    nats: "commonjs nats",
+    kafkajs: "commonjs kafkajs",
+    "@grpc/grpc-js": "commonjs @grpc/grpc-js",
+    "@grpc/proto-loader": "commonjs @grpc/proto-loader",
+  },
 };

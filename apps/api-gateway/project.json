@@ -50,7 +50,8 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "api-gateway:build",
-        "runBuildTargetDependencies": false
+        "runBuildTargetDependencies": false,
+        "nodeOptions": "--no-deprecation"
       },
       "configurations": {
         "development": {

@@ -1,5 +1,5 @@
-import lighthouse from "lighthouse";
-import * as chromeLauncher from "chrome-launcher";
+import lighthouse from "lighthouse/core/index.js";
+import * as chromeLauncher from "chrome-launcher/dist/index.js";
 import { fileURLToPath } from "url";
 
 // Check if called directly

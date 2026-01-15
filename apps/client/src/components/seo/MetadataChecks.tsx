@@ -21,7 +21,7 @@ export default function MetadataChecks({
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-md border-gray-200/50 dark:border-white/10">
+      <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-md border-indigo-100 dark:border-white/10 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Camera className="w-5 h-5 text-pink-500" />
@@ -33,7 +33,7 @@ export default function MetadataChecks({
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Title Tag
             </span>
-            <div className="text-sm bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-3 rounded-md font-medium text-gray-900 dark:text-gray-100">
+            <div className="text-sm bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-3 rounded-md font-medium text-gray-900 dark:text-gray-200">
               {data.title || <span className="text-red-500 italic">Missing</span>}
             </div>
           </div>
@@ -41,7 +41,7 @@ export default function MetadataChecks({
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Meta Description
             </span>
-            <div className="text-sm bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-3 rounded-md text-gray-600 dark:text-gray-400 leading-relaxed">
+            <div className="text-sm bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-white/5 p-3 rounded-md text-gray-600 dark:text-gray-300 leading-relaxed">
               {data.description || <span className="text-red-500 italic">Missing</span>}
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function MetadataChecks({
         </CardContent>
       </Card>
 
-      <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-md border-gray-200/50 dark:border-white/10">
+      <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-md border-indigo-100 dark:border-white/10 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Smartphone className="w-5 h-5 text-blue-500" />

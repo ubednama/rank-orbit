@@ -18,7 +18,9 @@ export function ReportHeader({ url, metadata, loading }: ReportHeaderProps) {
   useEffect(() => {
     setMounted(true);
     setDateStr(new Date().toLocaleDateString());
-    setTimeStr(new Date().toLocaleTimeString());
+    setTimeStr(
+      new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "numeric", hour12: true }),
+    );
   }, []);
 
   return (
@@ -31,7 +33,7 @@ export function ReportHeader({ url, metadata, loading }: ReportHeaderProps) {
         <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-white/5 px-2.5 py-1 rounded-full border border-gray-200 dark:border-white/10">
             <Globe className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="font-mono truncate max-w-[200px]" title={url}>
+            <span className="font-mono truncate" title={url}>
               {url}
             </span>
           </span>
@@ -57,7 +59,7 @@ export function ReportHeader({ url, metadata, loading }: ReportHeaderProps) {
           Export PDF
         </Button>
         <Button
-          className="bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border border-indigo-400/20 dark:border-white/30 shadow-lg shadow-indigo-500/20"
+          className="bg-linear-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 text-black dark:text-white border border-indigo-400/20 dark:border-white/30 shadow-sm shadow-indigo-500/30 hover:shadow-indigo-500/40 transition-all duration-300 transform hover:scale-[1.02]"
           onClick={() => (window.location.href = "/")}
         >
           New Audit

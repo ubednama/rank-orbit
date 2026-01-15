@@ -1,12 +1,63 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Timer, LayoutPanelLeft, Clock, Zap, Accessibility, Gauge, Activity } from "lucide-react";
-import { TechnicalAnalysis } from "@shared/types";
+import { Timer, LayoutPanelLeft, Clock, Accessibility, Gauge, Activity } from "lucide-react";
+import { LighthouseMetrics } from "@shared/types";
 import CoreWebVitalsSkeleton from "@/components/loading/CoreWebVitalsSkeleton";
 
 interface CoreWebVitalsProps {
-  analysis?: TechnicalAnalysis;
+  metrics?: LighthouseMetrics;
   isLoading?: boolean;
+}
+
+function getStatus(key: keyof LighthouseMetrics, value: string | number): string {
+  if (value === "N/A" || value === undefined) return "Unknown";
+
+  const num = typeof value === "string" ? parseFloat(value) : value;
+
+  // 0-100 Scores
+  if (key === "accessibility_score") {
+    if (num >= 90) return "Excellent";
+    if (num >= 50) return "Moderate";
+    return "Poor";
+  }
+
+  // Web Vitals
+  if (key === "lcp") {
+    // units: s
+    if (num <= 2.5) return "Good";
+    if (num <= 4.0) return "Needs Work";
+    return "Poor";
+  }
+
+  if (key === "cls") {
+    // unitless
+    if (num <= 0.1) return "Good";
+    if (num <= 0.25) return "Needs Work";
+    return "Poor";
+  }
+
+  if (key === "fcp") {
+    // units: s
+    if (num <= 1.8) return "Good";
+    if (num <= 3.0) return "Needs Work";
+    return "Poor";
+  }
+
+  if (key === "speed_index") {
+    // units: s
+    if (num <= 3.4) return "Good";
+    if (num <= 5.8) return "Needs Work";
+    return "Poor";
+  }
+
+  if (key === "tbt") {
+    // units: ms
+    if (num <= 200) return "Good";
+    if (num <= 600) return "Needs Work";
+    return "Poor";
+  }
+
+  return "Unknown";
 }
 
 function MetricCard({
@@ -55,24 +106,51 @@ function MetricCard({
   );
 }
 
-export default function CoreWebVitals({ analysis, isLoading }: CoreWebVitalsProps) {
+export default function CoreWebVitals({ metrics, isLoading }: CoreWebVitalsProps) {
   if (isLoading) {
     return <CoreWebVitalsSkeleton />;
   }
 
-  // If no analysis (e.g. error or not started), show empty or handled by parent
-  // We can show placeholders if analysis is missing but isLoading is false
-  if (!analysis) return null;
+  if (!metrics) return null;
 
   return (
     <>
-      <MetricCard title="Performance" icon={Zap} metric={analysis.Performance} />
-      <MetricCard title="Accessibility" icon={Accessibility} metric={analysis.Accessibility} />
-      <MetricCard title="Largest Contentful Paint" icon={Timer} metric={analysis.LCP} />
-      <MetricCard title="Cumulative Layout Shift" icon={LayoutPanelLeft} metric={analysis.CLS} />
-      <MetricCard title="Total Blocking Time" icon={Clock} metric={analysis.TBT} />
-      <MetricCard title="First Contentful Paint" icon={Gauge} metric={analysis.FCP} />
-      <MetricCard title="Speed Index" icon={Activity} metric={analysis["Speed Index"]} />
+      <MetricCard
+        title="Accessibility"
+        icon={Accessibility}
+        metric={{
+          value: metrics.accessibility_score,
+          status: getStatus("accessibility_score", metrics.accessibility_score),
+        }}
+      />
+      <MetricCard
+        title="Largest Contentful Paint"
+        icon={Timer}
+        metric={{ value: metrics.lcp, status: getStatus("lcp", metrics.lcp) }}
+      />
+      <MetricCard
+        title="Cumulative Layout Shift"
+        icon={LayoutPanelLeft}
+        metric={{ value: metrics.cls, status: getStatus("cls", metrics.cls) }}
+      />
+      <MetricCard
+        title="Total Blocking Time"
+        icon={Clock}
+        metric={{ value: metrics.tbt, status: getStatus("tbt", metrics.tbt) }}
+      />
+      <MetricCard
+        title="First Contentful Paint"
+        icon={Gauge}
+        metric={{ value: metrics.fcp, status: getStatus("fcp", metrics.fcp) }}
+      />
+      <MetricCard
+        title="Speed Index"
+        icon={Activity}
+        metric={{
+          value: metrics.speed_index,
+          status: getStatus("speed_index", metrics.speed_index),
+        }}
+      />
     </>
   );
 }

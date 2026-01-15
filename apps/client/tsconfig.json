@@ -20,7 +20,7 @@
         "name": "next"
       }
     ],
-    "types": ["jest", "node"],
+    "types": ["jest", "node", "react", "react-dom"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

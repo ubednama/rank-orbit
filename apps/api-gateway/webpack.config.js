@@ -9,6 +9,11 @@ module.exports = {
       devtoolModuleFilenameTemplate: "[absolute-resource-path]",
     }),
   },
+  resolve: {
+    alias: {
+      "class-transformer/storage": require.resolve("class-transformer/cjs/storage.js"),
+    },
+  },
   plugins: [
     new NxAppWebpackPlugin({
       target: "node",
@@ -18,8 +23,14 @@ module.exports = {
       assets: ["./src/assets"],
       optimization: false,
       outputHashing: "none",
-      generatePackageJson: true,
       sourceMap: true,
     }),
   ],
+  externals: {
+    mqtt: "commonjs mqtt",
+    nats: "commonjs nats",
+    kafkajs: "commonjs kafkajs",
+    "@grpc/grpc-js": "commonjs @grpc/grpc-js",
+    "@grpc/proto-loader": "commonjs @grpc/proto-loader",
+  },
 };

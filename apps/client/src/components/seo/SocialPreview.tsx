@@ -36,7 +36,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
         <div className="flex justify-between gap-6 bg-gray-50 dark:bg-black/20 p-6 rounded-xl border border-dashed">
           {/* Mobile Result */}
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
               <Smartphone className="w-3 h-3" /> Mobile
             </div>
             <div className="bg-white dark:bg-[#1f1f1f] p-4 rounded-lg shadow-sm max-w-[360px] mx-auto border dark:border-gray-700">
@@ -60,7 +60,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
 
           {/* Desktop Result */}
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
               <Monitor className="w-3 h-3" /> Desktop
             </div>
             <div className="bg-white dark:bg-[#1f1f1f] p-4 rounded-lg shadow-sm border dark:border-gray-700">
@@ -88,7 +88,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
         <div className="flex justify-between gap-1 gap-y-8">
           {/* Twitter Card */}
           <div className="space-y-1">
-            <div className="text-xs text-center text-gray-500 font-medium">
+            <div className="text-xs text-center text-gray-500 dark:text-gray-400 font-medium">
               Twitter (X) Large Card
             </div>
             <div className="bg-black border dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm max-w-[400px] mx-auto">
@@ -113,7 +113,9 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
 
           {/* LinkedIn */}
           <div className="space-y-1">
-            <div className="text-xs text-center text-gray-500 font-medium">LinkedIn Post</div>
+            <div className="text-xs text-center text-gray-500 dark:text-gray-400 font-medium">
+              LinkedIn Post
+            </div>
             <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg overflow-hidden shadow-sm max-w-[400px] mx-auto">
               {image ? (
                 <div className="relative aspect-[1.91/1] bg-gray-200 overflow-hidden">
@@ -137,7 +139,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
 
           {/* WhatsApp */}
           <div className="space-y-1">
-            <div className="text-xs text-center text-gray-500 font-medium">
+            <div className="text-xs text-center text-gray-500 dark:text-gray-400 font-medium">
               WhatsApp Shared Link
             </div>
             <div className="bg-[#E5DDD5] dark:bg-[#0b141a] p-4 rounded-xl shadow-inner max-w-[320px] mx-auto">

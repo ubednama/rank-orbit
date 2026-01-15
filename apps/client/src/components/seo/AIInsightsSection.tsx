@@ -95,26 +95,21 @@ export default function AIInsightsSection({
                     <div>
                       <Badge
                         className={`
-                                            ${
-                                              metric.status === "Excellent" ||
-                                              metric.status === "Good"
-                                                ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
-                                                : ""
-                                            }
-                                            ${
-                                              metric.status === "Needs Work" ||
-                                              metric.status === "Moderate"
-                                                ? "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
-                                                : ""
-                                            }
-                                            ${
-                                              metric.status === "Poor" ||
-                                              metric.status === "Critical"
-                                                ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
-                                                : ""
-                                            }
-                                            border shadow-none hover:bg-opacity-80 rounded-full
-                                        `}
+                          ${
+                            metric.status === "Excellent" || metric.status === "Good"
+                              ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
+                              : ""
+                          }
+                          ${
+                            metric.status === "Needs Work" || metric.status === "Moderate"
+                              ? "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
+                              : ""
+                          }
+                          ${
+                            metric.status === "Poor" || metric.status === "Critical"
+                              ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
+                              : ""
+                          } border shadow-none hover:bg-opacity-80 rounded-full`}
                         variant="outline"
                       >
                         {metric.status}
@@ -150,7 +145,7 @@ export default function AIInsightsSection({
                       components={{
                         strong: ({ node, ...props }: MarkdownComponentProps) => (
                           <span
-                            className="font-semibold text-indigo-700 dark:text-indigo-300 block mb-1 text-base"
+                            className="font-semibold text-indigo-700 dark:text-indigo-300 text-base"
                             {...props}
                           />
                         ),

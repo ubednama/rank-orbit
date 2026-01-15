@@ -1,4 +1,5 @@
 import { AIAnalysis } from "@shared/types";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 
 interface AISeoScoreProps {
   data: AIAnalysis;
@@ -17,9 +18,9 @@ export default function AISeoScore({ data }: AISeoScoreProps) {
     <div className="bg-linear-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border border-indigo-100/50 dark:border-white/5">
       <div className="flex justify-between items-center">
         {data.score_rationale && (
-          <p className="text-sm text-muted-foreground max-w-xl mt-1 leading-snug">
-            {data.score_rationale}
-          </p>
+          <div className="text-sm text-muted-foreground max-w-xl mt-1 leading-snug">
+            <MarkdownRenderer>{data.score_rationale}</MarkdownRenderer>
+          </div>
         )}
         <div className="text-right">
           <div className={`text-3xl font-bold ${getScoreColor(data.seo_score)}`}>
