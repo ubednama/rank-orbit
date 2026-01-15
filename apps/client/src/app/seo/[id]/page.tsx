@@ -37,7 +37,7 @@ function SEOReportContent() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 dark:bg-purple-900/10 rounded-full blur-[128px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 dark:bg-indigo-900/10 rounded-full blur-[128px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-8">
+      <div className="max-w-7xl mx-auto px-2 md:px-6 relative z-10 space-y-8">
         {sanitizedUrl && sanitizedUrl !== url && (
           <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 p-4 rounded-lg flex flex-col md:flex-row justify-between items-center text-sm">
             <p className="text-yellow-800 dark:text-yellow-200">
@@ -71,10 +71,11 @@ function SEOReportContent() {
             className="space-y-8"
           >
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-12 gap-2 md:gap-6">
               <PerformanceScore
                 score={data?.lighthouse_metrics?.performance_score}
                 loading={loading}
+                className="col-span-4 md:col-span-3"
               />
               <CoreWebVitals metrics={data?.lighthouse_metrics} isLoading={loading} />
             </div>

@@ -78,7 +78,7 @@ export default function Navbar() {
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="fixed inset-0 top-16 bg-white dark:bg-black z-40 md:hidden flex flex-col p-6 space-y-6 border-t border-gray-200 dark:border-white/10"
+            className="fixed inset-0 top-16 bg-white/95 dark:bg-black/95 backdrop-blur-xl z-40 md:hidden flex flex-col p-6 space-y-6 border-t border-gray-200 dark:border-white/10"
           >
             <Link
               href="/#features"

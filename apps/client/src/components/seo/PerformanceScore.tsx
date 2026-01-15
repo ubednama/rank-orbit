@@ -2,18 +2,26 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Award } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import PerformanceScoreSkeleton from "@/components/loading/PerformanceScoreSkeleton";
 
 export default function PerformanceScore({
   score,
   loading,
+  className,
 }: {
   score: number | undefined;
   loading?: boolean;
+  className?: string;
 }) {
   return (
-    <Card className="md:col-span-1 border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md relative overflow-hidden group">
+    <Card
+      className={cn(
+        "md:col-span-1 border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md relative overflow-hidden group",
+        className,
+      )}
+    >
       <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">

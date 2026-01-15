@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Timer, LayoutPanelLeft, Clock, Accessibility, Gauge, Activity } from "lucide-react";
 import { LighthouseMetrics } from "@shared/types";
@@ -64,10 +65,12 @@ function MetricCard({
   title,
   icon: Icon,
   metric,
+  className,
 }: {
   title: string;
   icon: React.ElementType;
   metric?: { value: string | number; status: string };
+  className?: string;
 }) {
   const statusColors = {
     Excellent:
@@ -87,7 +90,12 @@ function MetricCard({
     statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-700";
 
   return (
-    <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-md border-gray-200/50 dark:border-white/10 hover:border-indigo-500/30 transition-colors">
+    <Card
+      className={cn(
+        "bg-white/40 dark:bg-white/5 backdrop-blur-md border-gray-200/50 dark:border-white/10 hover:border-indigo-500/30 transition-colors",
+        className,
+      )}
+    >
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
           <Icon className="w-4 h-4 mr-2" />
@@ -122,26 +130,31 @@ export default function CoreWebVitals({ metrics, isLoading }: CoreWebVitalsProps
           value: metrics.accessibility_score,
           status: getStatus("accessibility_score", metrics.accessibility_score),
         }}
+        className="col-span-4 md:col-span-3"
       />
       <MetricCard
         title="Largest Contentful Paint"
         icon={Timer}
         metric={{ value: metrics.lcp, status: getStatus("lcp", metrics.lcp) }}
+        className="col-span-4 md:col-span-3"
       />
       <MetricCard
         title="Cumulative Layout Shift"
         icon={LayoutPanelLeft}
         metric={{ value: metrics.cls, status: getStatus("cls", metrics.cls) }}
+        className="col-span-3 md:col-span-3"
       />
       <MetricCard
         title="Total Blocking Time"
         icon={Clock}
         metric={{ value: metrics.tbt, status: getStatus("tbt", metrics.tbt) }}
+        className="col-span-3 md:col-span-3"
       />
       <MetricCard
         title="First Contentful Paint"
         icon={Gauge}
         metric={{ value: metrics.fcp, status: getStatus("fcp", metrics.fcp) }}
+        className="col-span-3 md:col-span-3"
       />
       <MetricCard
         title="Speed Index"
@@ -150,6 +163,7 @@ export default function CoreWebVitals({ metrics, isLoading }: CoreWebVitalsProps
           value: metrics.speed_index,
           status: getStatus("speed_index", metrics.speed_index),
         }}
+        className="col-span-3 md:col-span-3"
       />
     </>
   );
