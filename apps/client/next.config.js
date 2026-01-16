@@ -16,6 +16,10 @@ const nextConfig = {
         source: "/api/:path*",
         destination: "http://localhost:3333/api/:path*",
       },
+      {
+        source: "/auth/:path*",
+        destination: "http://localhost:3333/api/auth/:path*",
+      },
     ];
   },
   async headers() {

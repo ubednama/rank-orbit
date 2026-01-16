@@ -17,8 +17,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+    } else if ((exception as any)?.status) {
+      // Duck-typing for when instanceof check fails (e.g. package version mismatch)
+      status = (exception as any).status;
+    }
+
+    // Fix for ThrottlerException sometimes losing its status or type
+    if (status === 500 && (exception as any)?.message?.includes("ThrottlerException")) {
+      status = HttpStatus.TOO_MANY_REQUESTS;
+    }
 
     const message =
       exception instanceof HttpException ? exception.getResponse() : "Internal Server Error";
@@ -26,6 +37,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Enhance logging
     this.logger.error(
       `Http Status: ${status} Error Message: ${JSON.stringify(message)} Path: ${request.url}`,
+      (exception as any).stack, // Log stack trace
     );
 
     // Standardized Error Response

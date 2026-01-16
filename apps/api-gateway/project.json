@@ -51,7 +51,7 @@
       "options": {
         "buildTarget": "api-gateway:build",
         "runBuildTargetDependencies": false,
-        "nodeOptions": "--no-deprecation"
+        "runtimeArgs": ["--no-deprecation"]
       },
       "configurations": {
         "development": {

@@ -7,6 +7,8 @@ import { CrawlResponse, AiAnalysisResponse, CrawlRequestDto, AiCrawlResponse } f
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
 import { db } from "@db";
+import { InjectQueue } from "@nestjs/bull";
+import { Queue } from "bull";
 
 export type AuditStreamPayload =
   | { type: "status"; message: string }
@@ -29,15 +31,14 @@ export interface AuditStreamEvent {
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
   private crawlerUrl: string;
-  private aiUrl: string;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @InjectQueue("ai-analysis") private aiQueue: Queue,
   ) {
     this.crawlerUrl = this.configService.getOrThrow<string>("CRAWLER_SERVICE_URL");
-    this.aiUrl = this.configService.getOrThrow<string>("AI_SERVICE_URL");
   }
 
   /**
@@ -60,20 +61,22 @@ export class AuditService {
   }
 
   /**
-   * Requests AI-powered SEO analysis from the AI microservice
+   * Requests AI-powered SEO analysis via Queue
    * @param dto - Page content and metadata for analysis
    * @returns AI-generated insights, recommendations, and keyword analysis
    */
   async analyze(dto: AnalyzeRequestDto): Promise<AiAnalysisResponse> {
     try {
-      const response = await firstValueFrom(
-        this.httpService.post<AiAnalysisResponse>(`${this.aiUrl}/analyze`, dto),
-      );
-      return response.data;
+      // Add to Queue
+      const job = await this.aiQueue.add("analyze", dto);
+
+      // Await result (Queue handles concurrency)
+      // job.finished() returns the result of the processor
+      const result = await job.finished();
+      return result as AiAnalysisResponse;
     } catch (error) {
-      this.logger.error(`AI Analysis failed: ${error.message}`, error.stack);
-      const errorMessage = error.response?.data || "Failed to analyze content";
-      throw new Error(`AI Analysis failed: ${errorMessage}`);
+      this.logger.error(`AI Analysis Queue failed: ${error.message}`, error.stack);
+      throw new Error(`AI Analysis failed: ${error.message}`);
     }
   }
 
@@ -108,7 +111,7 @@ export class AuditService {
       const sanitizedUrl = parsedUrl.toString();
 
       // Verify URL is accessible before proceeding with expensive crawl operation
-      await firstValueFrom(this.httpService.head(sanitizedUrl, { timeout: 5000 }));
+      await firstValueFrom(this.httpService.head(sanitizedUrl, { timeout: 10000 }));
 
       return { sanitizedUrl, isSanitized };
     } catch (error) {
@@ -184,6 +187,13 @@ export class AuditService {
           const crawlDto: CrawlRequestDto = { url: sanitizedUrl };
           const crawlPromise = this.crawl(crawlDto).catch((e) => {
             console.error("DEBUG: Crawl Promise Rejected", e);
+            if (
+              e.message.includes("ECONNREFUSED") ||
+              e.message.includes("502") ||
+              e.message.includes("503")
+            ) {
+              throw new Error("Crawler Service Unavailable. Please try again later.");
+            }
             throw e;
           });
           const dbLookupPromise = db.audit
@@ -232,15 +242,43 @@ export class AuditService {
             };
           } else {
             // Content modified or first audit: generate fresh AI insights
-            this.logger.debug("Generating AI insights");
-            subscriber.next({ data: { type: "status", message: "Generating AI insights..." } });
+            this.logger.debug("Queueing AI insights");
+            subscriber.next({ data: { type: "status", message: "Added to Analysis Queue..." } });
+
             const analyzeDto = {
               page_content: crawlResponse.page_content,
               metadata: crawlResponse.metadata,
               lighthouse_metrics: crawlResponse.lighthouse_metrics,
             };
-            aiResult = await this.analyze(analyzeDto);
-            this.logger.debug("AI insights generated");
+
+            // This will block until the queued job finishes
+            try {
+              aiResult = await this.analyze(analyzeDto);
+            } catch (aiError) {
+              this.logger.error(`AI Service unavailable: ${aiError.message}`);
+              subscriber.next({
+                data: {
+                  type: "status",
+                  message: "AI Service unavailable. Generating partial report...",
+                },
+              });
+
+              // Fallback dummy response
+              aiResult = {
+                ai_analysis: {
+                  summary: "AI Service Unavailable",
+                  action_plan: ["**Service Issue**: The AI analysis service is currently down."],
+                  detailed_report:
+                    "# Service Notice\n\nWe could not generate AI insights at this time because the AI Service is unresponsive.\n\nPlease try again later.",
+                  seo_score: 0,
+                  score_rationale: "Service Unavailable",
+                  keyword_analysis: "N/A",
+                  technical_analysis: {},
+                },
+              };
+            }
+
+            this.logger.debug("AI insights generated (or fallback used)");
           }
 
           subscriber.next({ data: { type: "ai", data: aiResult } });

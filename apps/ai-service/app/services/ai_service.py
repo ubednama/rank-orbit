@@ -116,10 +116,17 @@ class AIInsightGenerator:
     def generate(self, data: AnalyzeRequest) -> Dict:
         if not self.chain:
             return {
-                "summary": "AI Service not configured.",
-                "action_plan": [],
+                "summary": "AI Insights are unavailable because the API Key is not configured. Please add your Gemini API Key to enable specific recommendations.",
+                "action_plan": [
+                    "**Configure API Key**: Add GOOGLE_API_KEY to your environment variables.",
+                    "**Retry Audit**: Run the audit again to see AI-powered insights.",
+                    "**Check Documentation**: Refer to the setup guide for API configuration."
+                ],
                 "technical_analysis": {},
-                "keyword_analysis": "N/A",
+                "keyword_analysis": "N/A - API Restricted",
+                "detailed_report": "# Service Notice\n\nAI features are currently disabled due to missing configuration.\n\n## Next Steps\nPlease configure the backend services with a valid Gemini API key to unlock full reports.",
+                "seo_score": 0,
+                "score_rationale": "Score unavailable. API key missing.",
                 "error": "not_configured"
             }
 
@@ -153,10 +160,13 @@ class AIInsightGenerator:
             
             logger.error(f"AI generation failed: {e}")
             return {
-                "summary": "Error generating insights.",
-                "action_plan": ["Check server logs."],
+                "summary": "We encountered an issue generating AI insights for this page.",
+                "action_plan": ["**Retry Later**: The AI service might be temporarily unavailable."],
                 "technical_analysis": {},
-                "keyword_analysis": "Error",
+                "keyword_analysis": "Error during generation",
+                "detailed_report": f"# Error Report\n\nAn error occurred while processing the AI analysis.\n\nError details: {error_msg}",
+                "seo_score": 0,
+                "score_rationale": "Analysis failed due to a server error.",
                 "error": error_code
             }
 

@@ -5,10 +5,12 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useState } from "react";
 import { ModeToggle } from "../../mode-toggle";
 import Logo from "../Logo";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User } from "lucide-react";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isLoading } = useUser();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -55,10 +57,29 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center space-x-4">
           <ModeToggle />
-          {/* <button className="bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center space-x-2 shadow-lg shadow-purple-500/20">
-                        <span>Get Started</span>
-                        <Sparkles className="w-4 h-4" />
-                    </button> */}
+
+          {!isLoading && user ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600 dark:text-gray-400 hidden lg:block">
+                Hey, {user.name?.split(" ")[0]}
+              </span>
+              <a
+                href="/api/auth/logout"
+                className="text-sm font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </a>
+            </div>
+          ) : (
+            <a
+              href="/api/auth/login"
+              className="bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center space-x-2 shadow-lg shadow-purple-500/20"
+            >
+              <span>Login</span>
+              <LogIn className="w-4 h-4" />
+            </a>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -102,10 +123,30 @@ export default function Navbar() {
               API Docs
             </Link>
             <hr className="border-gray-200 dark:border-white/10" />
-            {/* <button className="w-full bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-3 rounded-xl font-medium flex items-center justify-center space-x-2">
-                            <span>Get Started</span>
-                            <Sparkles className="w-4 h-4" />
-                        </button> */}
+
+            {!isLoading && user ? (
+              <>
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                  <User className="w-5 h-5" />
+                  <span>{user.name}</span>
+                </div>
+                <a
+                  href="/api/auth/logout"
+                  className="text-lg font-medium text-red-500 hover:text-red-600 flex items-center gap-2"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Logout
+                </a>
+              </>
+            ) : (
+              <a
+                href="/api/auth/login"
+                className="w-full bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-3 rounded-xl font-medium flex items-center justify-center space-x-2"
+              >
+                <span>Login / Sign Up</span>
+                <LogIn className="w-4 h-4" />
+              </a>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

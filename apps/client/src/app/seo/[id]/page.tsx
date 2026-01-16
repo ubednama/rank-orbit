@@ -12,12 +12,14 @@ import { SocialPreview } from "@/components/seo/SocialPreview";
 import { ReadabilityAnalysis } from "@/components/seo/ReadabilityAnalysis";
 import { ReportHeader } from "@/components/seo/ReportHeader";
 import { ErrorState } from "@/components/seo/ErrorState";
+import { RateLimitState } from "@/components/seo/RateLimitState";
 
 function SEOReportContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get("url");
 
-  const { data, loading, aiLoading, error, isNetworkError, sanitizedUrl } = useSEOAudit(url);
+  const { data, loading, aiLoading, error, isNetworkError, isRateLimited, sanitizedUrl } =
+    useSEOAudit(url);
 
   if (!url) {
     return (
@@ -25,6 +27,10 @@ function SEOReportContent() {
         <p className="text-red-500">Invalid Request: No URL provided.</p>
       </div>
     );
+  }
+
+  if (isRateLimited) {
+    return <RateLimitState />;
   }
 
   if (error && !loading) {

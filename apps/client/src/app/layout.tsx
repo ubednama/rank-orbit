@@ -4,6 +4,7 @@ import NavBar from "../components/ui/Layout/NavBar";
 import Footer from "../components/ui/Layout/Footer";
 import QueryProvider from "@/providers/QueryProvider";
 import { Toaster } from "sonner";
+import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import "./global.css";
 
 export const metadata: Metadata = {
@@ -22,21 +23,23 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <QueryProvider>
-            <NavBar />
-            {children}
-            <Footer />
-            <Toaster richColors />
-          </QueryProvider>
-        </ThemeProvider>
-      </body>
+      <Auth0Provider profileUrl="/api/auth/me">
+        <body>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <QueryProvider>
+              <NavBar />
+              {children}
+              <Footer />
+              <Toaster richColors />
+            </QueryProvider>
+          </ThemeProvider>
+        </body>
+      </Auth0Provider>
     </html>
   );
 }

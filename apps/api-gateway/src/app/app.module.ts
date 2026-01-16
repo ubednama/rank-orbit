@@ -11,6 +11,13 @@ import KeyvRedis from "@keyv/redis";
 import Keyv from "keyv";
 import { CacheableMemory } from "cacheable";
 import { createClient } from "redis";
+import { AuthModule } from "../auth/auth.module";
+import { BullModule } from "@nestjs/bull";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerStorageRedisService } from "@nest-lab/throttler-storage-redis";
+import { APP_GUARD, Reflector } from "@nestjs/core";
+
+import { ThrottlerBehindProxyGuard } from "../guards/throttler-behind-proxy.guard";
 
 @Module({
   imports: [
@@ -23,24 +30,17 @@ import { createClient } from "redis";
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         let url = configService.get("REDIS_URL") || "redis://localhost:6379";
-
-        // Upstash requires TLS, but sometimes provides redis:// URL.
-        // node-redis throws if tls:true is used with redis:// scheme.
         if (url.includes("upstash") && url.startsWith("redis://")) {
           url = url.replace("redis://", "rediss://");
         }
-
         const client = createClient({
           url,
-          // When url is rediss://, tls is implied. We just need rejectUnauthorized: false for some setups if needed.
           socket: {
             tls: url.startsWith("rediss://"),
             rejectUnauthorized: false,
           },
         });
-        // Handle error events to prevent crashing
         client.on("error", (err) => console.error("Redis Client Error", err));
-
         return {
           stores: [
             new Keyv({
@@ -52,11 +52,50 @@ import { createClient } from "redis";
       },
       inject: [ConfigService],
     }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        let url = configService.get("REDIS_URL") || "redis://localhost:6379";
+        // Bull uses ioredis, which handles rediss:// automatically usually, but let's be safe
+        if (url.includes("upstash") && url.startsWith("redis://")) {
+          url = url.replace("redis://", "rediss://");
+        }
+        return {
+          url,
+          redis: {
+            tls: url.startsWith("rediss://") ? { rejectUnauthorized: false } : undefined,
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        let url = config.get("REDIS_URL") || "redis://localhost:6379";
+        // Throttler Redis storage also uses ioredis or similar
+        if (url.includes("upstash") && url.startsWith("redis://")) {
+          url = url.replace("redis://", "rediss://");
+        }
+        return {
+          throttlers: [{ limit: 3, ttl: 2592000000 }], // Defaults, overridden by Guard
+          storage: new ThrottlerStorageRedisService(url),
+        };
+      },
+    }),
+    AuthModule,
     AuditModule,
     LoggingModule,
   ],
   controllers: [HealthController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerBehindProxyGuard,
+    },
+    Reflector,
+  ],
 })
 export class AppModule implements OnModuleInit {
   private readonly logger = new Logger(AppModule.name);

@@ -28,6 +28,13 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   CORS_ORIGINS = "http://localhost:4200,http://localhost:3000";
+
+  @IsUrl({ require_tld: false })
+  @IsString()
+  AUTH0_ISSUER_BASE_URL: string;
+
+  @IsString()
+  AUTH0_AUDIENCE: string;
 }
 
 export function validate(config: Record<string, unknown>) {
