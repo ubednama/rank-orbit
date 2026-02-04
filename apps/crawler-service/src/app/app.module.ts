@@ -10,6 +10,7 @@ import { LoggingModule } from "../logging/logging.module";
     ConfigModule.forRoot({
       isGlobal: true,
       validate,
+      envFilePath: ["apps/crawler-service/.env", ".env"],
     }),
     LoggingModule,
     CrawlModule,
