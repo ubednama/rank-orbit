@@ -1,42 +1,50 @@
-import nx from "@nx/eslint-plugin";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
+import globals from "globals";
 
-export default [
-  ...nx.configs["flat/base"],
-  ...nx.configs["flat/typescript"],
-  ...nx.configs["flat/javascript"],
+export default tseslint.config(
   {
-    ignores: ["**/dist", "**/out-tsc", "**/generated", "**/.next"],
+    ignores: [
+      "**/dist/**",
+      "**/build/**",
+      "**/.next/**",
+      "**/out/**",
+      "**/coverage/**",
+      "**/node_modules/**",
+      "**/venv/**",
+      "**/__pycache__/**",
+      "**/*.config.js",
+      "**/*.config.mjs",
+      "**/*.config.cjs",
+      "pnpm-lock.yaml",
+    ],
   },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    files: ["**/*.{ts,tsx,cts,mts}"],
+    languageOptions: {
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
+    },
     rules: {
-      "@nx/enforce-module-boundaries": [
+      "@typescript-eslint/no-unused-vars": [
         "error",
-        {
-          enforceBuildableLibDependency: true,
-          allow: ["^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$"],
-          depConstraints: [
-            {
-              sourceTag: "*",
-              onlyDependOnLibsWithTags: ["*"],
-            },
-          ],
-        },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
+  // Node scripts (.mjs in libs/, scripts/, tooling) — give them Node globals
   {
-    files: [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.cts",
-      "**/*.mts",
-      "**/*.js",
-      "**/*.jsx",
-      "**/*.cjs",
-      "**/*.mjs",
-    ],
-    // Override or add rules here
-    rules: {},
+    files: ["**/*.mjs", "**/*.cjs"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
   },
-];
+  // Prettier compatibility — must be last to disable conflicting style rules
+  prettier,
+);

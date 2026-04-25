@@ -78,18 +78,18 @@ export default function Testimonials() {
   }, [controls, isPaused]);
 
   return (
-    <section className="py-12 md:py-24 bg-white dark:bg-black relative overflow-hidden">
+    <section className="py-20 md:py-32 bg-white dark:bg-black relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent"></div>
 
-      <div className="w-full max-w-7xl mx-auto px-6 relative z-10 mb-12">
+      <div className="w-full max-w-7xl mx-auto px-6 relative z-10 mb-16">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-6">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-5 sm:mb-7">
             Loved by thousands of <br />
             <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500">
               Global Creators
             </span>
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-xl leading-relaxed">
             Empowering comprehensive SEO strategies for everyone, everywhere.
           </p>
         </div>

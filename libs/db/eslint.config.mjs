@@ -1,19 +1,5 @@
 import baseConfig from "../../eslint.config.mjs";
 
-export default [
-  ...baseConfig,
-  {
-    files: ["**/*.json"],
-    rules: {
-      "@nx/dependency-checks": [
-        "error",
-        {
-          ignoredFiles: ["{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}"],
-        },
-      ],
-    },
-    languageOptions: {
-      parser: await import("jsonc-eslint-parser"),
-    },
-  },
-];
+// Inherits the root flat config (typescript-eslint, prettier).
+// The legacy `@nx/dependency-checks` rule was removed with Nx (per ADR 004).
+export default [...baseConfig];

@@ -1,5 +1,7 @@
 packages:
   - "apps/*"
   - "libs/*"
+  - "libs/shared/*"
+
+# autoInstallPeers: peer deps required by transitive packages installed without manual intervention.
 autoInstallPeers: true
-ignore-workspace-root-check: true

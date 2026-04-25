@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Github, Linkedin, MessageSquare, Send, Twitter } from "lucide-react";
+import { MessageSquare, Send } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGithub, faLinkedin, faXTwitter } from "@fortawesome/free-brands-svg-icons";
 
 export default function AboutPage() {
   return (
@@ -69,7 +71,10 @@ export default function AboutPage() {
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   aria-label="Github"
                 >
-                  <Github className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                  <FontAwesomeIcon
+                    icon={faGithub}
+                    className="w-5 h-5 text-gray-700 dark:text-gray-300"
+                  />
                 </a>
                 <a
                   href="https://linkedin.com/in/ubed9"
@@ -78,7 +83,10 @@ export default function AboutPage() {
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   aria-label="LinkedIn"
                 >
-                  <Linkedin className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                  <FontAwesomeIcon
+                    icon={faLinkedin}
+                    className="w-5 h-5 text-gray-700 dark:text-gray-300"
+                  />
                 </a>
                 <a
                   href="https://x.com/__ubednama"
@@ -87,7 +95,10 @@ export default function AboutPage() {
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   aria-label="X (Twitter)"
                 >
-                  <Twitter className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                  <FontAwesomeIcon
+                    icon={faXTwitter}
+                    className="w-5 h-5 text-gray-700 dark:text-gray-300"
+                  />
                 </a>
               </div>
             </div>

@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npx nx build client --prod",
-  "outputDirectory": "dist/apps/client/.next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && cd apps/client && pnpm build",
+  "outputDirectory": "apps/client/.next",
+  "installCommand": "echo 'install handled by buildCommand'"
 }

@@ -4,15 +4,15 @@ import NavBar from "../components/ui/Layout/NavBar";
 import Footer from "../components/ui/Layout/Footer";
 import QueryProvider from "@/providers/QueryProvider";
 import { Toaster } from "sonner";
-import { Auth0Provider } from "@auth0/nextjs-auth0/client";
+import { UserProvider } from "@/providers/UserContext";
 import "./global.css";
 
 export const metadata: Metadata = {
-  title: "Rank Orbit - AI Powered SEO Perfomance Analyzer",
+  title: "Rank Orbit - AI Powered SEO Performance Analyzer",
   description:
     "Boost your website ranking with actionable AI insights. Comprehensive SEO audits, performance tracking, and competitor analysis.",
   keywords: "SEO, website analysis, performance, AI insights",
-  authors: [{ name: "SEO Analyzer Team" }],
+  authors: [{ name: "Rank Orbit Team" }],
 };
 
 export const viewport: Viewport = {
@@ -23,8 +23,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <Auth0Provider profileUrl="/api/auth/me">
-        <body>
+      <body>
+        <UserProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -38,8 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Toaster richColors />
             </QueryProvider>
           </ThemeProvider>
-        </body>
-      </Auth0Provider>
+        </UserProvider>
+      </body>
     </html>
   );
 }

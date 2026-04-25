@@ -1,9 +1,10 @@
-# Add files here to ignore them from prettier formatting
-/dist
-/coverage
-/.nx/cache
-/.nx/workspace-data
+node_modules
+dist
+build
 .next
-/tmp
-/apps/ai-service/venv
-**/__pycache__
+coverage
+pnpm-lock.yaml
+*.min.js
+*.min.css
+venv
+__pycache__

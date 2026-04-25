@@ -18,8 +18,9 @@ function SEOReportContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get("url");
 
-  const { data, loading, aiLoading, error, isNetworkError, isRateLimited, sanitizedUrl } =
-    useSEOAudit(url);
+  const { data, aiLoading, error, isNetworkError, isRateLimited, sanitizedUrl } = useSEOAudit(url);
+
+  const loading = false;
 
   if (!url) {
     return (
@@ -100,6 +101,7 @@ function SEOReportContent() {
               <div className="lg:col-span-2 space-y-3 sm:space-y-6">
                 <AIInsightsSection
                   data={data?.ai_analysis || null}
+                  technicalAnalysis={data?.technical_analysis}
                   loading={loading || aiLoading}
                 />
               </div>

@@ -30,7 +30,6 @@ export interface LighthouseMetrics {
 export interface AIAnalysis {
   summary: string;
   action_plan: string[];
-  technical_analysis: Record<string, { value: string | number; status: string }>;
   keyword_analysis?: string;
   detailed_report?: string;
   seo_score?: number;
@@ -62,9 +61,9 @@ export interface ReadabilityStats {
 
 export interface CrawlResponse {
   metadata: SeoMetadata;
-  lighthouse_metrics?: LighthouseMetrics;
-  technical_analysis?: TechnicalAnalysis;
-  readability_analysis?: ReadabilityStats;
+  lighthouse_metrics: LighthouseMetrics;
+  technical_analysis: TechnicalAnalysis;
+  readability_analysis: ReadabilityStats | null;
 }
 
 // DTOs for Service Communication

@@ -1,18 +1,18 @@
-const nextJest = require("next/jest.js");
+import nextJest from "next/jest.js";
 
-const createJestConfig = nextJest({
-  dir: "./",
-});
+// next/jest handles TS/JSX transform via SWC; no @nx/react preset needed.
+const createJestConfig = nextJest({ dir: "./" });
 
 const config = {
   displayName: "client",
-  preset: "../../jest.preset.js",
-  transform: {
-    "^(?!.*\\.(js|jsx|ts|tsx|css|json)$)": "@nx/react/plugins/jest",
-  },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   coverageDirectory: "../../coverage/apps/client",
   testEnvironment: "jsdom",
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@shared/types$": "<rootDir>/../../libs/shared/types/src/index.ts",
+    "^@shared/utils$": "<rootDir>/../../libs/shared/utils/src/index.ts",
+  },
 };
 
-module.exports = createJestConfig(config);
+export default createJestConfig(config);

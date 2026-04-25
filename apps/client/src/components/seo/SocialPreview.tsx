@@ -33,7 +33,7 @@ export function SocialPreview({ title, description, image, url }: SocialPreviewP
           <Smartphone className="w-5 h-5 text-blue-500" />
           Google Search Result Preview
         </h4>
-        <div className="flex flex-col md:flex-row justify-between gap-6 bg-gray-50 dark:bg-black/20 p-1 sm:p-6 rounded-xl sm:border border-dashed">
+        <div className="flex flex-col md:flex-row justify-between gap-2 bg-gray-50 dark:bg-black/20">
           {/* Mobile Result */}
           <div className="space-y-2">
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">

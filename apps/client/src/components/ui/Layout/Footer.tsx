@@ -1,6 +1,7 @@
 "use client";
 
-import { Github, Linkedin, Twitter } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTwitter, faGithub, faLinkedin } from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
 
 export default function Footer() {
@@ -22,7 +23,7 @@ export default function Footer() {
                 className="p-2 rounded-lg glass-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:scale-110 transition-all group"
                 aria-label="X (Twitter)"
               >
-                <Twitter className="h-5 w-5" />
+                <FontAwesomeIcon icon={faTwitter} className="h-5 w-5" />
               </a>
               <a
                 href="https://github.com/ubednama"
@@ -31,7 +32,7 @@ export default function Footer() {
                 className="p-2 rounded-lg glass-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:scale-110 transition-all"
                 aria-label="GitHub"
               >
-                <Github className="h-5 w-5" />
+                <FontAwesomeIcon icon={faGithub} className="h-5 w-5" />
               </a>
               <a
                 href="https://linkedin.com/in/ubed9"
@@ -40,7 +41,7 @@ export default function Footer() {
                 className="p-2 rounded-lg glass-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:scale-110 transition-all"
                 aria-label="LinkedIn"
               >
-                <Linkedin className="h-5 w-5" />
+                <FontAwesomeIcon icon={faLinkedin} className="h-5 w-5" />
               </a>
             </div>
           </div>

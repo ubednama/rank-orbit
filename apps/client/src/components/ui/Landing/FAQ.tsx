@@ -36,22 +36,22 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-12 md:py-24 bg-gray-50 dark:bg-black relative overflow-hidden">
+    <section className="py-20 md:py-32 bg-gray-50 dark:bg-black relative overflow-hidden">
       {/* Background Decoration */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 w-1/3 h-full bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[128px] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-1/3 h-1/2 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-[128px] pointer-events-none" />
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+        <div className="text-center max-w-2xl mx-auto mb-16 sm:mb-20">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-5 sm:mb-7">
             Frequently Asked Questions
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-xl leading-relaxed">
             Everything you need to know about Rank Orbit.
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-2 sm:space-y-4">
+        <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
           {faqs.map((faq, index) => (
             <div
               key={index}
@@ -59,7 +59,7 @@ export default function FAQ() {
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full flex items-center justify-between p-4 sm:p-6 text-left hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group"
+                className="w-full flex items-center justify-between p-5 sm:p-7 text-left hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group"
               >
                 <span className="font-semibold text-gray-900 dark:text-white text-base md:text-lg pr-8 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                   {faq.question}
@@ -78,7 +78,7 @@ export default function FAQ() {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
-                    <div className="px-4 pb-4 sm:px-6 sm:pb-6 text-gray-600 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-white/5 pt-4">
+                    <div className="px-5 pb-5 sm:px-7 sm:pb-7 text-gray-600 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-white/5 pt-4 text-base md:text-lg">
                       {faq.answer}
                     </div>
                   </motion.div>

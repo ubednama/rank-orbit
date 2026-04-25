@@ -1,4 +1,3 @@
-import { Injectable, Logger } from "@nestjs/common";
 import * as puppeteer from "puppeteer";
 import * as cheerio from "cheerio";
 import {
@@ -9,14 +8,14 @@ import {
 } from "@shared/types";
 import { spawn } from "child_process";
 import * as path from "path";
+import { logger } from "../logger";
 
 /**
  * Web crawling and analysis service using Puppeteer and Lighthouse
  * Extracts SEO metadata, calculates readability metrics, and runs performance audits
  */
-@Injectable()
 export class CrawlService {
-  private readonly logger = new Logger(CrawlService.name);
+  private readonly logger = logger;
 
   /**
    * Orchestrates full page analysis including metadata extraction and readability calculation
@@ -26,7 +25,9 @@ export class CrawlService {
    * @returns Complete crawl results with metadata, sanitized content, and readability stats
    * @throws Error if page fails to load or critical extraction errors occur
    */
-  async extractMetadata(url: string): Promise<AiCrawlResponse> {
+  async extractMetadata(
+    url: string,
+  ): Promise<Omit<AiCrawlResponse, "lighthouse_metrics" | "technical_analysis">> {
     let browser;
     try {
       browser = await puppeteer.launch({
@@ -38,7 +39,7 @@ export class CrawlService {
       await page.setUserAgent(
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
       );
-      await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 
       const metadata = await page.evaluate(() => {
         const getMetaContent = (name: string) =>
@@ -203,8 +204,6 @@ export class CrawlService {
    * @returns Categorized technical analysis with status indicators (Good/Moderate/Poor/Critical)
    */
   calculateTechnicalAnalysis(metrics: LighthouseMetrics): TechnicalAnalysis {
-    const results: any = {};
-
     const getVal = (key: keyof LighthouseMetrics) => {
       const val = metrics[key];
       if (typeof val === "number") return val;
@@ -215,55 +214,56 @@ export class CrawlService {
     // Normalize performance score to 0-100 range if provided as decimal
     let perf = getVal("performance_score");
     if (perf <= 1) perf *= 100;
-    results["Performance"] = {
-      value: Math.round(perf),
-      status: perf < 50 ? "Poor" : perf < 90 ? "Needs Work" : "Excellent",
-    };
 
     // Accessibility score evaluation based on WCAG compliance
     let acc = getVal("accessibility_score");
     if (acc <= 1) acc *= 100;
-    results["Accessibility"] = {
-      value: Math.round(acc),
-      status: acc < 90 ? "Needs Work" : "Excellent",
-    };
 
     // Largest Contentful Paint: primary loading performance metric
     const lcp = getVal("lcp");
-    results["LCP"] = {
-      value: `${lcp} s`,
-      status: lcp > 4.0 ? "Critical" : lcp > 2.5 ? "Needs Work" : "Good",
-    };
 
     // Cumulative Layout Shift: visual stability indicator
     const cls = getVal("cls");
-    results["CLS"] = {
-      value: cls,
-      status: cls > 0.25 ? "Poor" : cls > 0.1 ? "Needs Work" : "Good",
-    };
 
     // Total Blocking Time: interactivity metric
     const tbt = getVal("tbt");
-    results["TBT"] = {
-      value: `${Math.round(tbt)} ms`,
-      status: tbt > 600 ? "Critical" : tbt > 200 ? "Moderate" : "Good",
-    };
 
     // First Contentful Paint: perceived load speed
     const fcp = getVal("fcp");
-    results["FCP"] = {
-      value: `${fcp} s`,
-      status: fcp > 3.0 ? "Poor" : fcp > 1.8 ? "Moderate" : "Good",
-    };
 
     // Speed Index: visual progress metric
     const si = getVal("speed_index");
-    results["Speed Index"] = {
-      value: `${si} s`,
-      status: si > 5.8 ? "Critical" : si > 3.4 ? "Moderate" : "Good",
-    };
 
-    return results;
+    return {
+      Performance: {
+        value: Math.round(perf),
+        status: perf < 50 ? "Poor" : perf < 90 ? "Needs Work" : "Excellent",
+      },
+      Accessibility: {
+        value: Math.round(acc),
+        status: acc < 90 ? "Needs Work" : "Excellent",
+      },
+      LCP: {
+        value: `${lcp} s`,
+        status: lcp > 4.0 ? "Critical" : lcp > 2.5 ? "Needs Work" : "Good",
+      },
+      CLS: {
+        value: cls,
+        status: cls > 0.25 ? "Poor" : cls > 0.1 ? "Needs Work" : "Good",
+      },
+      TBT: {
+        value: `${Math.round(tbt)} ms`,
+        status: tbt > 600 ? "Critical" : tbt > 200 ? "Moderate" : "Good",
+      },
+      FCP: {
+        value: `${fcp} s`,
+        status: fcp > 3.0 ? "Poor" : fcp > 1.8 ? "Moderate" : "Good",
+      },
+      "Speed Index": {
+        value: `${si} s`,
+        status: si > 5.8 ? "Critical" : si > 3.4 ? "Moderate" : "Good",
+      },
+    };
   }
 
   /**
@@ -280,6 +280,8 @@ export class CrawlService {
    * @returns Lighthouse performance metrics or error placeholders on failure
    */
   async runLighthouse(url: string): Promise<LighthouseMetrics> {
+    const LIGHTHOUSE_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
+
     return new Promise((resolve) => {
       /**
        * Worker script location:
@@ -291,22 +293,41 @@ export class CrawlService {
         "dist/apps/crawler-service/assets/lighthouse-worker.mjs",
       );
 
-      this.logger.log(`Spawning Lighthouse worker at: ${workerPath} for url: ${url}`);
+      this.logger.info(`Spawning Lighthouse worker at: ${workerPath} for url: ${url}`);
 
       const child = spawn("node", [workerPath, url]);
+      let resolved = false;
+
+      // Kill the worker if it runs longer than LIGHTHOUSE_TIMEOUT_MS
+      const killTimer = setTimeout(() => {
+        if (!resolved) {
+          this.logger.error(`Lighthouse worker timed out after 3 minutes for: ${url}`);
+          child.kill("SIGKILL");
+          resolved = true;
+          resolve(this.getErrorMetrics("Lighthouse timed out after 3 minutes"));
+        }
+      }, LIGHTHOUSE_TIMEOUT_MS);
 
       let stdoutData = "";
       let stderrData = "";
 
       child.stdout.on("data", (data) => {
-        stdoutData += data.toString();
+        const output = data.toString();
+        this.logger.debug(`[Worker Output] ${output.substring(0, 100)}...`); // Log partial output
+        stdoutData += output;
       });
 
       child.stderr.on("data", (data) => {
-        stderrData += data.toString();
+        const errorOutput = data.toString();
+        this.logger.error(`[Worker Error] ${errorOutput}`);
+        stderrData += errorOutput;
       });
 
       child.on("close", (code) => {
+        clearTimeout(killTimer);
+        if (resolved) return; // Already resolved via timeout
+        resolved = true;
+
         if (code !== 0) {
           this.logger.error(`Lighthouse worker failed with code ${code}`);
           this.logger.error(`Worker stderr: ${stderrData}`);
@@ -335,8 +356,12 @@ export class CrawlService {
       });
 
       child.on("error", (err) => {
-        this.logger.error(`Failed to spawn Lighthouse worker: ${err}`);
-        resolve(this.getErrorMetrics(err.message));
+        clearTimeout(killTimer);
+        if (!resolved) {
+          resolved = true;
+          this.logger.error(`Failed to spawn Lighthouse worker: ${err}`);
+          resolve(this.getErrorMetrics(err.message));
+        }
       });
     });
   }

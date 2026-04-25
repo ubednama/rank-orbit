@@ -18,7 +18,10 @@ export interface SEOReportData {
 }
 
 /**
- * React hook for managing SEO audit lifecycle via Server-Sent Events
+ * React hook for managing SEO audit lifecycle via Server-Sent Events.
+ *
+ * v1: anonymous-only. Auth (DIY JWT + sse_token pattern) lands in phase 2 per
+ * handbook/03-system-design.md.
  *
  * Features:
  * - Real-time progress updates via SSE streaming
@@ -41,22 +44,23 @@ export function useSEOAudit(url: string | null) {
 
   useEffect(() => {
     let eventSource: EventSource | null = null;
+    let isActive = true;
+
     setSanitizedUrl(null);
     sanitizedUrlRef.current = null;
 
-    if (url) {
+    if (!url) return;
+
+    const startAudit = async () => {
       const cacheKey = `seo_audit_${url}`;
-      /**
-       * Attempt cache retrieval for original URL
-       * Backend may sanitize the URL, in which case we cache under both keys
-       * to handle both user-provided and sanitized URLs
-       */
       const cached = CacheService.get<SEOReportData>(cacheKey);
 
       if (cached) {
-        setReportData(cached);
-        setLoading(false);
-        setAiLoading(false);
+        if (isActive) {
+          setReportData(cached);
+          setLoading(false);
+          setAiLoading(false);
+        }
         return;
       }
 
@@ -67,156 +71,139 @@ export function useSEOAudit(url: string | null) {
       setLoading(true);
       setAiLoading(false);
 
-      const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3333";
-      const streamUrl = `${gatewayUrl}/audit/stream?url=${encodeURIComponent(url)}`;
+      try {
+        const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3333";
+        const streamUrl = `${gatewayUrl}/api/audit/stream?url=${encodeURIComponent(url)}`;
 
-      // Initial check for Rate Limits (429) before opening SSE
-      // EventSource doesn't expose status codes, so we peek with fetch first
-      fetch(streamUrl, { method: "HEAD" })
-        .then((res) => {
-          if (res.status === 429) {
-            toast.error("Monthly audit limit reached. Sign up or upgrade for more!", {
-              action: {
-                label: "Sign Up",
-                onClick: () => (window.location.href = "/api/auth/login"),
-              },
-              duration: 8000,
-            });
+        // Pre-check rate limit via HEAD before opening EventSource (which can't read status codes).
+        const headRes = await fetch(streamUrl, { method: "HEAD" });
+        if (headRes.status === 429) {
+          toast.error("You've reached your free limit. Accounts are coming soon.", {
+            duration: 6000,
+          });
+          if (isActive) {
             setIsRateLimited(true);
             setLoading(false);
-            return;
           }
-          if (!res.ok && res.status !== 405) {
-            // 405 might happen if HEAD not allowed, but we assume GET
-            // Continue to try SSE anyway if unsure, or handle error
-          }
+          return;
+        }
 
-          // Open SSE if check passes
-          eventSource = new EventSource(streamUrl);
+        eventSource = new EventSource(streamUrl);
 
-          eventSource.onmessage = (event) => {
-            try {
-              const parsed = JSON.parse(event.data);
+        eventSource.onmessage = (event) => {
+          try {
+            const parsed = JSON.parse(event.data);
 
-              switch (parsed.type) {
-                case "status":
-                  // Special handling for Queue messages
-                  if (parsed.message.toLowerCase().includes("queue")) {
-                    toast.message("Queued", { description: parsed.message });
-                  } else {
-                    toast.info(parsed.message);
-                  }
-                  break;
+            switch (parsed.type) {
+              case "status":
+                if (parsed.message?.toLowerCase().includes("queue")) {
+                  toast.message("Queued", { description: parsed.message });
+                } else {
+                  toast.info(parsed.message);
+                }
+                break;
 
-                case "sanitized":
-                  // URL was modified by backend to remove tracking parameters
-                  setSanitizedUrl(parsed.data.sanitizedUrl);
-                  sanitizedUrlRef.current = parsed.data.sanitizedUrl;
-                  toast.success(`URL sanitized: ${parsed.data.sanitizedUrl}`);
-                  break;
+              case "sanitized":
+                setSanitizedUrl(parsed.data.sanitizedUrl);
+                sanitizedUrlRef.current = parsed.data.sanitizedUrl;
+                toast.success(`URL sanitized: ${parsed.data.sanitizedUrl}`);
+                break;
 
-                case "crawler":
-                  console.log("Crawler Response:", parsed.data);
-                  setReportData((prev) => {
-                    const newData = {
+              case "crawler":
+                setReportData(
+                  (prev) =>
+                    ({
                       ...(prev || {}),
                       lighthouse_metrics: parsed.data.lighthouse_metrics,
                       metadata: parsed.data.metadata,
                       technical_analysis: parsed.data.technical_analysis,
                       readability_analysis: parsed.data.readability_analysis,
                       ai_analysis: null,
-                    } as SEOReportData;
-                    return newData;
-                  });
+                    }) as SEOReportData,
+                );
+                if (isActive) {
                   setLoading(false);
                   setAiLoading(true);
-                  break;
+                }
+                break;
 
-                case "ai":
-                  console.log("AI Response:", parsed.data);
-                  setReportData((prev) => {
-                    if (!prev) return null;
-                    const finalData = {
-                      ...prev,
-                      ai_analysis: parsed.data.ai_analysis,
-                    };
-                    /**
-                     * Dual-cache strategy: store under both original and sanitized URLs
-                     * Ensures instant cache hits regardless of whether user includes tracking params
-                     */
-                    CacheService.set(cacheKey, finalData);
-                    if (sanitizedUrlRef.current) {
-                      const sanitizedCacheKey = `seo_audit_${sanitizedUrlRef.current}`;
-                      CacheService.set(sanitizedCacheKey, finalData);
-                    }
-                    return finalData;
-                  });
+              case "ai":
+                setReportData((prev) => {
+                  if (!prev) return null;
+                  const finalData = {
+                    ...prev,
+                    ai_analysis: parsed.data.ai_analysis,
+                  } as SEOReportData;
+                  // Dual-cache: original URL + sanitized URL
+                  CacheService.set(cacheKey, finalData);
+                  if (sanitizedUrlRef.current) {
+                    CacheService.set(`seo_audit_${sanitizedUrlRef.current}`, finalData);
+                  }
+                  return finalData;
+                });
+                if (isActive) {
                   setAiLoading(false);
                   toast.success("AI Analysis Complete!");
-                  break;
+                }
+                break;
 
-                case "error":
-                  console.error("Audit Error:", parsed.message);
-                  // Check if the error message is a 429 or limit related
-                  if (
-                    parsed.message?.includes("429") ||
-                    parsed.message?.toLowerCase().includes("limit")
-                  ) {
-                    toast.error("Monthly audit limit reached. Sign up or upgrade for more!", {
-                      action: {
-                        label: "Sign Up",
-                        onClick: () => (window.location.href = "/api/auth/login"),
-                      },
-                      duration: 8000,
-                    });
-                    setIsRateLimited(true);
-                  } else {
-                    setError(parsed.message);
-                    toast.error(parsed.message);
-                  }
-                  eventSource?.close();
+              case "error":
+                if (
+                  parsed.message?.includes("429") ||
+                  parsed.message?.toLowerCase().includes("limit")
+                ) {
+                  toast.error("You've reached your free limit. Accounts are coming soon.", {
+                    duration: 6000,
+                  });
+                  if (isActive) setIsRateLimited(true);
+                } else {
+                  if (isActive) setError(parsed.message);
+                  toast.error(parsed.message || "An error occurred during the audit");
+                }
+                eventSource?.close();
+                if (isActive) {
                   setLoading(false);
                   setAiLoading(false);
-                  break;
+                }
+                break;
 
-                case "complete":
-                  eventSource?.close();
+              case "complete":
+                eventSource?.close();
+                if (isActive) {
                   setLoading(false);
                   setAiLoading(false);
-                  break;
-              }
-            } catch (e) {
-              console.error("Error parsing SSE event:", e);
+                }
+                break;
             }
-          };
+          } catch (e) {
+            console.error("Error parsing SSE event:", e);
+          }
+        };
 
-          eventSource.onerror = (err) => {
-            if (eventSource?.readyState === EventSource.CLOSED) return;
-
-            console.error("EventSource failed:", err);
-            // Check if it's likely a server error (cannot easily distinguishing 500 vs network off from EventSource generic error)
-            // But we can update the user message to be friendlier
+        eventSource.onerror = () => {
+          if (eventSource?.readyState === EventSource.CLOSED) return;
+          if (isActive) {
             setError(
-              "Connection interrupted. If this persists, our servers might be experiencing issues (500).",
+              "Connection interrupted. If this persists, our servers might be experiencing issues.",
             );
             setIsNetworkError(true);
-            toast.error("Connection failed - Service might be down");
-            eventSource?.close();
             setLoading(false);
             setAiLoading(false);
-          };
-        })
-        .catch((e) => {
-          console.error("Fetch/Setup error:", e);
-          setError("Unable to reach the server. It's not you, it's us. Please try again later.");
-          setLoading(false);
-        });
-    }
+          }
+          toast.error("Connection failed — service might be down");
+          eventSource?.close();
+        };
+      } catch (e) {
+        console.error("Audit setup failed:", e);
+        if (isActive) setLoading(false);
+      }
+    };
+
+    startAudit();
 
     return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
+      isActive = false;
+      if (eventSource) eventSource.close();
     };
   }, [url]);
 

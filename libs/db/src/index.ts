@@ -1,15 +1,14 @@
-import { PrismaClient } from "./generated/client";
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "./schema";
 
-export * from "./generated/client";
+export * from "./schema";
+export * from "drizzle-orm";
 
 const url = process.env["DATABASE_URL"];
-const pool = new Pool({
-  connectionString: url,
-  ssl: { rejectUnauthorized: false },
-  max: 1,
-});
-const adapter = new PrismaPg(pool);
+if (!url) throw new Error("DATABASE_URL is not set");
 
-export const db = new PrismaClient({ adapter });
+// `prepare: false` is required for Supabase Transaction Pool mode
+const client = postgres(url, { prepare: false });
+
+export const db = drizzle(client, { schema });

@@ -1,26 +1,19 @@
-/**
- * Rank Orbit API Gateway
- */
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import { routes } from "./routes";
+import { logger } from "./logger";
+import { startWorker } from "./worker";
 
-import { Logger, ValidationPipe } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app/app.module";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
-import * as bodyParser from "body-parser";
-import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
-import { ConfigService } from "@nestjs/config";
-import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
+startWorker();
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+const app = express();
+const port = parseInt(process.env.API_GATEWAY_PORT || "3333", 10);
 
-  // Configure Winston logger for centralized logging across all modules
-  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
-
-  const configService = app.get(ConfigService);
-
-  // CORS Configuration
-  app.enableCors({
+// Middleware
+app.use(helmet());
+app.use(
+  cors({
     origin: [
       "http://localhost:4200",
       "http://localhost:3000",
@@ -29,44 +22,36 @@ async function bootstrap() {
     ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
-  });
+  }),
+);
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  /**
-   * Body Parser Configuration
-   * Increased payload limits to support large SEO audit responses
-   * containing comprehensive lighthouse metrics and HTML content
-   */
-  app.use(bodyParser.json({ limit: "50mb" }));
-  app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+// Health Check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
-  // Configure global API prefix for versioning and route organization
-  const globalPrefix = "api";
-  app.setGlobalPrefix(globalPrefix);
+// Routes
+app.use("/api", routes);
 
-  const port = configService.get<number>("API_GATEWAY_PORT", 3333);
+// Global Error Handler
+app.use(
+  (
+    err: { status?: number; message?: string; name?: string },
+    req: express.Request,
+    res: express.Response,
 
-  /**
-   * Global Middleware Configuration
-   * - Validation: Automatically sanitizes and validates incoming DTOs
-   * - Exception Filter: Provides consistent error response formatting
-   */
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-  );
-  app.useGlobalFilters(new HttpExceptionFilter());
+    _next: express.NextFunction,
+  ) => {
+    logger.error("Express Global Error:", err);
+    res.status(err.status || 500).json({
+      message: err.message || "Internal Server Error",
+      error: err.name || "Error",
+    });
+  },
+);
 
-  // Swagger Documentation
-  const config = new DocumentBuilder()
-    .setTitle("Rank Orbit API")
-    .setDescription("SEO Audit and Crawler Service API")
-    .setVersion("1.0")
-    .addServer(`http://localhost:${port}`)
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document);
-
-  await app.listen(port);
-  Logger.log(`🚀 API Gateway running on: http://localhost:${port}/${globalPrefix}`);
-}
-
-bootstrap();
+app.listen(port, () => {
+  logger.info(`🚀 API Gateway running on: http://localhost:${port}/api`);
+});

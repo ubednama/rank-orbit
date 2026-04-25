@@ -13,9 +13,6 @@ class AIResponse(BaseModel):
     action_plan: List[str] = Field(
         description="A list of 3 to 5 actionable recommendations in the format '**Heading**\\nDescription...'."
     )
-    technical_analysis: Dict[str, Any] = Field(
-        description="Structured dictionary of technical metrics with values and statuses.", default={}
-    )
     keyword_analysis: Optional[str] = Field(
         description="Analysis of keyword usage in headers versus body."
     )

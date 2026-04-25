@@ -43,16 +43,16 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="features" className="py-12 md:py-24 relative overflow-hidden">
+    <section id="features" className="py-20 md:py-32 relative overflow-hidden">
       <div className="w-full max-w-7xl mx-auto px-6 relative z-10">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Everything you need to <br />
+        <div className="text-center max-w-2xl mx-auto mb-20 md:mb-28">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-5 sm:mb-7">
+            Everything you need to{" "}
             <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500">
               Rank #1
             </span>
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-xl leading-relaxed">
             Rank Orbit combines traditional SEO tools with modern AI to give you the competitive
             edge.
           </p>

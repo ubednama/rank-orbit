@@ -57,18 +57,18 @@ export default function Pricing() {
   return (
     <section
       id="pricing"
-      className="py-24 relative overflow-hidden bg-gray-50 dark:bg-black transition-colors duration-300"
+      className="py-20 md:py-32 relative overflow-hidden bg-gray-50 dark:bg-black transition-colors duration-300"
     >
       {/* Background Gradients */}
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-purple-500/10 dark:bg-purple-500/10 rounded-full blur-[128px]" />
       <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-indigo-500/10 dark:bg-indigo-500/10 rounded-full blur-[128px]" />
 
       <div className="w-full max-w-7xl mx-auto px-6 relative z-10">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+        <div className="text-center max-w-2xl mx-auto mb-16 sm:mb-20">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-5 sm:mb-7">
             Simple, transparent pricing
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-xl leading-relaxed">
             Start for free, upgrade as you grow. No hidden fees.
           </p>
         </div>
@@ -139,9 +139,9 @@ export default function Pricing() {
                     }
                   }
                 }}
-                className={`w-full py-3 rounded-xl font-medium transition-all ${
+                className={`w-full py-3.5 rounded-xl font-semibold transition-all ${
                   plan.popular
-                    ? "bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-70 disabled:hover:bg-gray-900"
+                    ? "bg-indigo-600 dark:bg-white text-white dark:text-black hover:bg-indigo-700 dark:hover:bg-gray-100 disabled:opacity-70 disabled:hover:bg-indigo-600 shadow-lg shadow-indigo-500/20"
                     : "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:hover:bg-gray-100"
                 }`}
               >

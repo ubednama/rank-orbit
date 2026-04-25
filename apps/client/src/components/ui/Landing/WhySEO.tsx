@@ -28,15 +28,15 @@ const reasons = [
 
 export default function WhySEO() {
   return (
-    <section className="py-12 md:py-24 relative overflow-hidden">
+    <section className="py-20 md:py-32 relative overflow-hidden">
       <div className="absolute inset-0 bg-linear-to-b from-transparent via-blue-50/50 to-transparent dark:via-blue-900/10 pointer-events-none" />
 
       <div className="w-full max-w-7xl mx-auto px-6 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 sm:mb-6 bg-clip-text text-gray-900 dark:text-white bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
+        <div className="text-center max-w-3xl mx-auto mb-20 md:mb-28">
+          <h2 className="text-3xl md:text-5xl font-bold mb-5 sm:mb-7 bg-clip-text text-gray-900 dark:text-white bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 leading-tight">
             Why SEO Matters?
           </h2>
-          <p className="text-base md:text-lg text-gray-600 dark:text-gray-400">
+          <p className="text-base md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
             Search Engine Optimization isn't just about rankings; it's about building a sustainable
             digital presence that drives real business growth.
           </p>

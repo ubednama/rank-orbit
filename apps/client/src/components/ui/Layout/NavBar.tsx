@@ -6,11 +6,11 @@ import { useState } from "react";
 import { ModeToggle } from "../../mode-toggle";
 import Logo from "../Logo";
 import { Menu, X, LogIn, LogOut, User } from "lucide-react";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUserContext } from "@/providers/UserContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, isLoading } = useUser();
+  const { user, isLoading, logout } = useUserContext();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -61,24 +61,24 @@ export default function Navbar() {
           {!isLoading && user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600 dark:text-gray-400 hidden lg:block">
-                Hey, {user.name?.split(" ")[0]}
+                Hey, {user.firstName}
               </span>
-              <a
-                href="/api/auth/logout"
+              <button
+                onClick={logout}
                 className="text-sm font-medium text-red-500 hover:text-red-600 flex items-center gap-1"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
-              </a>
+              </button>
             </div>
           ) : (
-            <a
-              href="/api/auth/login"
-              className="bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center space-x-2 shadow-lg shadow-purple-500/20"
+            <Link
+              href="/login"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center space-x-2 shadow-md shadow-indigo-500/30 ring-1 ring-indigo-700/30 hover:shadow-lg hover:shadow-indigo-500/40"
             >
               <span>Login</span>
               <LogIn className="w-4 h-4" />
-            </a>
+            </Link>
           )}
         </div>
 
@@ -128,24 +128,24 @@ export default function Navbar() {
               <>
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <User className="w-5 h-5" />
-                  <span>{user.name}</span>
+                  <span>{user.fullName || user.firstName}</span>
                 </div>
-                <a
-                  href="/api/auth/logout"
+                <button
+                  onClick={logout}
                   className="text-lg font-medium text-red-500 hover:text-red-600 flex items-center gap-2"
                 >
                   <LogOut className="w-5 h-5" />
                   Logout
-                </a>
+                </button>
               </>
             ) : (
-              <a
-                href="/api/auth/login"
-                className="w-full bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-3 rounded-xl font-medium flex items-center justify-center space-x-2"
+              <Link
+                href="/login"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-medium flex items-center justify-center space-x-2 shadow-md shadow-indigo-500/20 transition-colors"
               >
                 <span>Login / Sign Up</span>
                 <LogIn className="w-4 h-4" />
-              </a>
+              </Link>
             )}
           </motion.div>
         )}

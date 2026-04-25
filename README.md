@@ -1,92 +1,65 @@
 # Rank Orbit
 
-Rank Orbit is an advanced SEO Audit and Analysis platform. It leverages a microservices architecture to crawl websites, analyze performance metrics (Lighthouse), and generate AI-powered SEO insights.
+SaaS SEO analyzer. Paste a URL, get Lighthouse metrics + AI-generated insights streamed live via Server-Sent Events.
 
-## 🏗️ Architecture
+## Read this first
 
-The system is built using a modern microservices approach:
+The full architectural spec lives in [handbook/](handbook/). Start with:
 
-```mermaid
-graph TD
-    Client[Next.js Client] -- SSE / HTTP --> Gateway[API Gateway (NestJS)]
-    Gateway -- HTTP --> Crawler[Crawler Service (NestJS + Puppeteer)]
-    Gateway -- HTTP --> AI[AI Service (Python FastAPI)]
+1. [handbook/00-prerequisites.md](handbook/00-prerequisites.md) — git rules, tooling, session discipline
+2. [handbook/01-product.md](handbook/01-product.md) — what we're building
+3. [handbook/05-tech-stack.md](handbook/05-tech-stack.md) — locked technical decisions
+4. [handbook/SESSION_LOG.md](handbook/SESSION_LOG.md) — what happened last session
 
-    Crawler -- Returns --> Content[HTML & Lighthouse Metrics]
-    Content -- Passed to --> AI
-    AI -- Returns --> Insights[SEO Recommendations]
+For deployment, see [handbook/11-deployment.md](handbook/11-deployment.md).
+For the current bug/feature backlog, see [handbook/10-known-issues.md](handbook/10-known-issues.md).
+
+## Quickstart
+
+```sh
+make install          # pnpm install + per-service installs (Python venv, etc.)
+make dev-ai-service   # run ai-service locally (http://localhost:8000)
+make dev-api-gateway  # run api-gateway locally (http://localhost:3333)
+make dev-crawler-service # run crawler-service (http://localhost:3001)
+make dev-client       # run Next.js client (http://localhost:5000)
+make build            # build all
+make ci               # what CI runs: install + lint + typecheck + test + build
 ```
 
-- **Client (Next.js)**: A responsive UI for initiating audits and viewing real-time results via Server-Sent Events (SSE).
-- **API Gateway (NestJS)**: The central orchestrator. It handles client requests, delegates tasks to downstream services, and manages the SSE stream.
-- **Crawler Service (NestJS)**: Using Puppeteer and Lighthouse, this worker service extracts page metadata, screenshots, and core web vitals.
-- **AI Service (FastAPI)**: A Python-based service utilizing LangChain and Google Gemini to analyze content and provide actionable SEO strategies.
+See [Makefile](Makefile) for all targets.
 
-## 🚀 Quick Start
+## Layout
 
-### Prerequisites
-
-- **Node.js** (v18+)
-- **Python** (v3.9+)
-- **pnpm** (recommended) or npm
-- **Google Gemini API Key** (for AI features)
-
-### One-Command Start
-
-To launch all services (Client, Gateway, Crawler, AI) simultaneously:
-
-```bash
-./start-all.sh
+```
+.
+├── handbook/                   # spec — read at session start
+├── apps/
+│   ├── ai-service/             # Python FastAPI + LangChain + Gemini
+│   ├── api-gateway/            # Express 5 (Go phase 3)
+│   ├── crawler-service/        # Fastify (Browserless rewrite in Phase 1)
+│   └── client/                 # Next.js 16 App Router
+├── libs/
+│   ├── db/                     # Drizzle schema + Postgres client
+│   └── shared/types/           # Cross-service TS interfaces
+├── package.json                # pnpm workspaces (no Nx — see ADR 004)
+├── pnpm-workspace.yaml
+├── Makefile                    # build entrypoint
+├── tsconfig.base.json, eslint.config.mjs, jest.config.ts
+└── .github/workflows/ci.yml
 ```
 
-**Access Points:**
+## Tech stack at a glance
 
-- **Web App:** [http://localhost:4200](http://localhost:4200) (or 3000)
-- **API Gateway:** [http://localhost:3333](http://localhost:3333)
-- **Swagger Docs:** [http://localhost:3333/api/docs](http://localhost:3333/api/docs)
+- **Frontend**: Next.js 16, React 19, Shadcn/UI, Tailwind 4, TanStack Query
+- **Backend**: Express 5 (gateway, → Go phase 3); Fastify (crawler); FastAPI + LangChain (AI)
+- **Data**: Postgres (Supabase), Drizzle ORM, Redis (Upstash), BullMQ
+- **Browser automation**: Browserless.io (planned — Phase 1)
+- **Auth**: DIY JWT with `jsonwebtoken` + `argon2id` (Phase 2)
+- **Hosting**: Vercel (client), Fly.io (gateway, crawler), HF Spaces (ai-service)
+- **Observability**: Better Stack + Sentry (Phase 2)
 
-## 🔑 Environment Variables
+Full rationale in [handbook/08-decisions.md](handbook/08-decisions.md).
 
-Each service requires specific environment variables. Setup your `.env` or `.env.local` in the root (Monorepo approach) or per service.
+## License
 
-| Service              | Variable                  | Description                                                                          |
-| :------------------- | :------------------------ | :----------------------------------------------------------------------------------- |
-| **Global / Gateway** | `NODE_ENV`                | `development` or `production`                                                        |
-|                      | `PORT`                    | Gateway Port (Default: `3333`)                                                       |
-|                      | `CRAWLER_SERVICE_URL`     | URL of the Crawler Service (e.g., `http://localhost:3001`)                           |
-|                      | `AI_SERVICE_URL`          | URL of the AI Service info (e.g., `http://localhost:8000/api`)                       |
-|                      | `CORS_ORIGINS`            | Comma-separated allowed origins (e.g. `http://localhost:4200,http://localhost:3000`) |
-| **Crawler Service**  | `PORT`                    | Service Port (Default: `3001`)                                                       |
-| **AI Service**       | `GOOGLE_API_KEY`          | **REQUIRED** for AI features.                                                        |
-|                      | `MODEL_NAME`              | Model to use (Default: `gemini-pro`)                                                 |
-| **Client**           | `NEXT_PUBLIC_GATEWAY_URL` | Public URL for the API Gateway (e.g., `http://localhost:3333/api`)                   |
-
-## 🛠️ Developer Commands
-
-### Running Tests
-
-Run end-to-end tests to verify system stability:
-
-```bash
-npx nx e2e crawler-service-e2e
-```
-
-### API Documentation
-
-The API Gateway provides a fully interactive Swagger UI.
-
-- URL: [http://localhost:3333/api/docs](http://localhost:3333/api/docs)
-- Use this to test endpoints like `POST /audit/analyze` manually.
-
-### Code Formatting
-
-Ensure consistent code style across TypeScript and Python:
-
-```bash
-# Format TypeScript/JS/JSON
-npx prettier --write "apps/**/*.{ts,js,json}"
-
-# Format Python (AI Service)
-source apps/ai-service/venv/bin/activate
-black apps/ai-service
-```
+MIT

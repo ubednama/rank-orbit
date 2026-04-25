@@ -1,16 +1,20 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Sparkles, Zap, BarChart, Activity } from "lucide-react";
-import { AIAnalysis } from "@shared/types";
+import { AIAnalysis, TechnicalAnalysis } from "@shared/types";
 import AIInsightsLoading from "@/components/loading/AIInsightsLoading";
 import AISeoScore from "./AISeoScore";
 import { MarkdownRenderer, MarkdownComponentProps } from "@/components/ui/MarkdownRenderer";
-import { Badge } from "@/components/ui/badge";
 
+// Per ADR 006, `technical_analysis` lives on the crawler payload, NOT on AIAnalysis.
+// We accept it as a separate prop so the section can still render the metrics table.
 export default function AIInsightsSection({
   data,
+  technicalAnalysis,
   loading,
 }: {
   data: AIAnalysis | null;
+  technicalAnalysis?: TechnicalAnalysis;
   loading: boolean;
 }) {
   if (loading) {
@@ -71,8 +75,8 @@ export default function AIInsightsSection({
           </div>
         </div>
 
-        {/* 2. Hardcoded Technical Metrics Table */}
-        {data.technical_analysis && Object.keys(data.technical_analysis).length > 0 && (
+        {/* 2. Hardcoded Technical Metrics Table — sourced from crawler (ADR 006) */}
+        {technicalAnalysis && Object.keys(technicalAnalysis).length > 0 && (
           <div className="space-y-4">
             <h4 className="flex items-center gap-2 font-semibold text-lg text-indigo-700 dark:text-indigo-300">
               <Activity className="w-5 h-5" />
@@ -84,7 +88,7 @@ export default function AIInsightsSection({
                 <div>Value</div>
                 <div>Status</div>
               </div>
-              {Object.entries(data.technical_analysis).map(
+              {Object.entries(technicalAnalysis).map(
                 ([key, metric]: [string, { value: string | number; status: string }]) => (
                   <div
                     key={key}
@@ -143,13 +147,13 @@ export default function AIInsightsSection({
                   <div className="text-sm">
                     <MarkdownRenderer
                       components={{
-                        strong: ({ node, ...props }: MarkdownComponentProps) => (
+                        strong: ({ node: _node, ...props }: MarkdownComponentProps) => (
                           <span
                             className="font-semibold text-indigo-700 dark:text-indigo-300 text-base"
                             {...props}
                           />
                         ),
-                        p: ({ node, ...props }: MarkdownComponentProps) => (
+                        p: ({ node: _node, ...props }: MarkdownComponentProps) => (
                           <p
                             className="text-gray-600 dark:text-gray-300 leading-relaxed mb-0"
                             {...props}
