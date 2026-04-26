@@ -47,6 +47,7 @@ Each phase has: **Goal**, **Scope** (with checkboxes — tick as you ship), **Do
 - [ ] **sse_token pattern** for SSE auth (replaces JWT-in-querystring even for anon — gateway issues a short-lived signed token)
 - [ ] **Single-flight lock** for duplicate concurrent requests on same URL
 - [ ] **Negative cache** for failed/4xx URLs (1h TTL)
+- [x] **30-day audit cache freshness** — Postgres-only, stale read triggers re-run and writes a new row. Done 2026-04-26 via [ADR 012](08-decisions.md#adr-012--postgres-only-audit-cache-with-30-day-stale-read-re-trigger); dropped Redis result cache.
 - [ ] **No synthetic AI persistence** on AI failure (per Step 2 finding); emit error, don't pollute DB
 - [ ] **Generic error responses** to client (no `err.message` verbatim); request-id in every response for support
 - [ ] **Helmet + CORS** explicit configs (not defaults) per service

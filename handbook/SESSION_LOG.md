@@ -16,6 +16,42 @@ Format:
 
 ---
 
+## 2026-04-26 — Phase 1: 30-day audit cache freshness (Postgres-only)
+
+**Done**:
+
+- Implemented stale-read freshness check on the audit cache lookup at [apps/api-gateway/src/audit/audit.service.ts](../apps/api-gateway/src/audit/audit.service.ts): rows with `updatedAt <= now() - 30 days` are now treated as a cache miss and trigger a fresh crawl + AI re-run (which writes a new row).
+- Removed the Redis audit-result cache layer entirely from audit.service.ts (deleted the `Redis` import, `redisClient` singleton, `isRedisAvailable` flag, the cache-read block, and the cache-write block — ~70 lines net deletion). Redis usage in api-gateway is now scoped to BullMQ only ([apps/api-gateway/src/worker.ts](../apps/api-gateway/src/worker.ts)).
+- Added `CACHE_FRESHNESS_DAYS = 30` constant + `gt(updatedAt, freshThreshold)` predicate; ordered by `desc(updatedAt)` so the freshest row wins.
+- Wrote [ADR 012](08-decisions.md#adr-012--postgres-only-audit-cache-with-30-day-stale-read-re-trigger) — Postgres-only audit cache; 30-day stale-read re-trigger; rationale + alternatives + hard rules.
+- Ticked the new "30-day audit cache freshness" item under Phase 1 in [06-phases.md](06-phases.md).
+
+**Decided**:
+
+- [ADR 012](08-decisions.md#adr-012--postgres-only-audit-cache-with-30-day-stale-read-re-trigger) — Postgres is now the only audit-result cache (Accepted)
+
+**Deferred**:
+
+- ADR 013 (email stack) — write with `feat/email-notifications`
+- Single-flight lock — Phase 1 todo, comes later (will use Redis again, just not for the result)
+- Pruning old audit history rows — out of scope; not needed at portfolio volume
+
+**Verification status**:
+
+- `pnpm exec webpack --mode production` clean (api-gateway 52.8 KiB).
+- `pnpm exec tsc --noEmit` exits 0 — no type errors.
+- Pre-commit hook (eslint + prettier + black) clean. Husky environment uses brew-installed black.
+
+**Next session** (still in this conversation):
+
+1. Branch `feat/diy-jwt-auth` — `users` + `refresh_tokens` migrations, argon2id, `/auth/signup` `/auth/login` `/auth/me` `/auth/refresh` `/auth/logout`, gateway middleware that populates `req.user`, real `UserContext` on the client.
+2. Branch `feat/anon-quota-signin-gate` — client modal on 429; signed-in users get 3/month per `auditUsage`.
+3. Branch `feat/email-notifications` — `audit-notifications` BullMQ queue + react-email templates + Resend/SendGrid failover. Write ADR 013.
+
+**Open questions**: same as previous (BullMQ consumer location).
+
+---
+
 ## 2026-04-26 — v2 rebuild committed; managed-provider scrub; Phase 1 cache + email plan locked
 
 **Done**:
