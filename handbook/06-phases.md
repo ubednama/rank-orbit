@@ -44,7 +44,7 @@ Each phase has: **Goal**, **Scope** (with checkboxes — tick as you ship), **Do
 - [ ] **Body size limits**: gateway 100kb (was 50mb); ai-service 1mb (was unlimited)
 - [ ] **Timeout cascade fix**: gateway-axios 30s → crawler 25s → Browserless 20s; gateway-AI 60s → ai-service 50s → Gemini 45s
 - [ ] **SSE cleanup**: AbortController propagated through gateway; cancellation cancels in-flight crawler call + BullMQ job
-- [ ] **sse_token pattern** for SSE auth (replaces JWT-in-querystring even for anon — gateway issues a short-lived signed token)
+- [x] **sse_token pattern** for SSE auth — POST /audit/start issues a single-use 60s opaque token via `redis.getdel`; SSE GET consumes it. Done 2026-04-26 via `feat/anon-quota-signin-gate`. HMAC + IP-binding deferred (see SESSION_LOG).
 - [ ] **Single-flight lock** for duplicate concurrent requests on same URL
 - [ ] **Negative cache** for failed/4xx URLs (1h TTL)
 - [x] **30-day audit cache freshness** — Postgres-only, stale read triggers re-run and writes a new row. Done 2026-04-26 via [ADR 012](08-decisions.md#adr-012--postgres-only-audit-cache-with-30-day-stale-read-re-trigger); dropped Redis result cache.
