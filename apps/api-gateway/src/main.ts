@@ -1,7 +1,3 @@
-// dotenv must load BEFORE any module that reads process.env at import time
-// (e.g., libs/db reads DATABASE_URL when imported).
-import "dotenv/config";
-
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";

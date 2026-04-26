@@ -8,6 +8,8 @@ import {
 } from "@shared/types";
 import { spawn } from "child_process";
 import * as path from "path";
+import * as fs from "fs";
+import { fileURLToPath } from "url";
 import { logger } from "../logger";
 
 /**
@@ -40,6 +42,14 @@ export class CrawlService {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
       );
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+      // tsx + esbuild's --keep-names wraps inner arrow funcs with __name(...) calls.
+      // Puppeteer serializes the page.evaluate body and runs it in the browser, where
+      // __name doesn't exist. Inject a no-op polyfill before any evaluate() that relies
+      // on inner named arrows. (Plain string evaluate bypasses tsx transpilation.)
+      await page.evaluate(
+        "globalThis.__name = function(t, v) { try { Object.defineProperty(t, 'name', { value: v, configurable: true }); } catch (e) {} return t; };",
+      );
 
       const metadata = await page.evaluate(() => {
         const getMetaContent = (name: string) =>
@@ -94,7 +104,8 @@ export class CrawlService {
 
       return { metadata, page_content, readability_analysis };
     } catch (error) {
-      this.logger.error(`Error extracting metadata for ${url}: ${error}`);
+      const stack = error instanceof Error ? error.stack : String(error);
+      this.logger.error(`Error extracting metadata for ${url}: ${stack}`);
       throw error;
     } finally {
       if (browser) await browser.close();
@@ -285,13 +296,15 @@ export class CrawlService {
     return new Promise((resolve) => {
       /**
        * Worker script location:
-       * Development: dist/apps/crawler-service/assets/lighthouse-worker.mjs
-       * CWD is workspace root when running compiled output
+       * - Production (webpack dist): dist/apps/crawler-service/assets/lighthouse-worker.mjs (cwd = workspace root)
+       * - Development (tsx): apps/crawler-service/src/assets/lighthouse-worker.mjs (resolved via import.meta.url)
        */
-      const workerPath = path.join(
+      const distWorker = path.join(
         process.cwd(),
         "dist/apps/crawler-service/assets/lighthouse-worker.mjs",
       );
+      const srcWorker = fileURLToPath(new URL("../assets/lighthouse-worker.mjs", import.meta.url));
+      const workerPath = fs.existsSync(distWorker) ? distWorker : srcWorker;
 
       this.logger.info(`Spawning Lighthouse worker at: ${workerPath} for url: ${url}`);
 

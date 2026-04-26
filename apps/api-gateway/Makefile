@@ -9,7 +9,7 @@ build:
 	pnpm exec webpack --config webpack.config.js --mode production
 
 dev:
-	pnpm exec tsx watch src/main.ts
+	node --env-file=.env --import tsx src/main.ts
 
 start:
 	node ../../dist/apps/api-gateway/main.js
