@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   LighthouseMetrics,
@@ -8,6 +9,7 @@ import {
   ReadabilityStats,
 } from "@shared/types";
 import { CacheService } from "../services/cache.service";
+import { useUserContext } from "@/providers/UserContext";
 
 export interface SEOReportData {
   lighthouse_metrics: LighthouseMetrics;
@@ -20,19 +22,18 @@ export interface SEOReportData {
 /**
  * React hook for managing SEO audit lifecycle via Server-Sent Events.
  *
- * v1: anonymous-only. Auth (DIY JWT + sse_token pattern) lands in phase 2 per
- * handbook/03-system-design.md.
+ * Auth flow (handbook/03-system-design.md "sse_token pattern"):
+ *   1. POST /audit/start with optional Bearer → server validates + checks quota → returns sse_token
+ *   2. EventSource at GET /audit/stream?sse_token=<token> (single-use, 60s TTL)
  *
- * Features:
- * - Real-time progress updates via SSE streaming
- * - Client-side caching with localStorage for instant repeat audits
- * - URL sanitization awareness and dual-cache strategy
- * - Graceful error handling with network failure detection
+ * On 429 from anon users: redirects to /login?redirect_to=<current> so the user
+ * can sign in and continue with their tier (3/month).
  *
  * @param url - Target URL to audit (null to idle)
- * @returns Audit state including data, loading flags, errors, and sanitized URL
  */
 export function useSEOAudit(url: string | null) {
+  const router = useRouter();
+  const { getAccessToken } = useUserContext();
   const [reportData, setReportData] = useState<SEOReportData | null>(null);
   const [error, setError] = useState<string>("");
   const [isNetworkError, setIsNetworkError] = useState(false);
@@ -73,14 +74,30 @@ export function useSEOAudit(url: string | null) {
 
       try {
         const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3333";
-        const streamUrl = `${gatewayUrl}/api/audit/stream?url=${encodeURIComponent(url)}`;
+        const accessToken = getAccessToken();
 
-        // Pre-check rate limit via HEAD before opening EventSource (which can't read status codes).
-        const headRes = await fetch(streamUrl, { method: "HEAD" });
-        if (headRes.status === 429) {
-          toast.error("You've reached your free limit. Accounts are coming soon.", {
-            duration: 6000,
-          });
+        // POST /audit/start authenticates (optional), pre-checks quota, and issues a single-use
+        // sse_token (60s TTL). EventSource opens with that token in the query string.
+        const startRes = await fetch(`${gatewayUrl}/api/audit/start`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (startRes.status === 429) {
+          const body = await startRes.json().catch(() => ({}));
+          if (body.requiresSignIn) {
+            toast.info("Sign in to continue — you've used your free audit.", { duration: 5000 });
+            const redirectTo = encodeURIComponent(
+              window.location.pathname + window.location.search,
+            );
+            router.push(`/login?redirect_to=${redirectTo}`);
+          } else {
+            toast.error(body.message || "Monthly audit limit reached.", { duration: 6000 });
+          }
           if (isActive) {
             setIsRateLimited(true);
             setLoading(false);
@@ -88,6 +105,13 @@ export function useSEOAudit(url: string | null) {
           return;
         }
 
+        if (!startRes.ok) {
+          const body = await startRes.json().catch(() => ({}));
+          throw new Error(body.message || `Audit start failed (${startRes.status})`);
+        }
+
+        const { sse_token } = (await startRes.json()) as { sse_token: string };
+        const streamUrl = `${gatewayUrl}/api/audit/stream?sse_token=${encodeURIComponent(sse_token)}`;
         eventSource = new EventSource(streamUrl);
 
         eventSource.onmessage = (event) => {
