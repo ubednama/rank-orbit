@@ -343,9 +343,52 @@ Personal portfolio project; AI assistance is a tool, not a co-author.
 
 ---
 
+## ADR 012 — Postgres-only audit cache with 30-day stale-read re-trigger
+
+**Date**: 2026-04-26
+**Status**: Accepted
+
+### Context
+
+The `Audit` table in Postgres already persists every audit, but the read path also kept a Redis copy with a 1-day TTL ([apps/api-gateway/src/audit/audit.service.ts](../apps/api-gateway/src/audit/audit.service.ts) before this ADR). Two issues with the dual-store design:
+
+- **Two sources of truth.** The Redis copy and the Postgres row could disagree — particularly around `updatedAt` and the AI failure re-write rule (🔴 #3 from the Phase-0 audit).
+- **TTL economics.** Each cached audit is ~50–300 KB (lighthouse + AI JSON). A 1-month Redis TTL would burn the Upstash 256 MB free tier on the first ~1k unique URLs. A 1-day TTL is too short for the user's stated UX goal ("serve cache for a month").
+- **Hot-path latency isn't actually hot.** Audits aren't requested at sub-millisecond cadence — one user, one URL, one click. Postgres on Supabase with a `(url, updated_at)` index returns in <10 ms, well below SSE perception thresholds.
+
+### Decision
+
+- **Postgres is the only audit-result cache.** Drop Redis from the result-caching path entirely.
+- **Freshness window: 30 days.** Cache key is the sanitized URL; a row is "fresh" iff `updated_at > now() - interval '30 days'`. Older rows are treated as a cache miss.
+- **Stale-read trigger: re-run.** A miss-on-stale triggers the full crawl + AI pipeline. The new result is INSERTed as a new row. The previous row is left in place (free history for the Phase-2 dashboard; we can prune later if it ever matters).
+- **Redis stays** for: BullMQ transport ([apps/api-gateway/src/worker.ts](../apps/api-gateway/src/worker.ts)), the future single-flight lock (Phase 1), and any future short-TTL coordination state. Not for audit results.
+
+### Consequences
+
+- Cache invalidation has one source of truth (the `updated_at` column).
+- Free-tier Upstash usage drops to whatever BullMQ + future single-flight needs (~few MB).
+- Read path is one DB query instead of `Redis.get → fallback → DB.select`. Code is ~70 lines shorter.
+- The `auditUsage` quota check still hits Postgres; that's fine — quota is billing-adjacent and Postgres is the right home.
+- **History accumulates.** Each re-audit creates a new `Audit` row. At one audit per URL per month, this is ~12 rows/URL/year — trivial. If volume grows, add a TTL pruner.
+- **No Redis fallback for cache hits.** If Postgres is down, audits fail end-to-end. Acceptable for free-tier hosting where the gateway is also down with the DB.
+
+### Alternatives considered
+
+- **UNIQUE on `audits.url` + UPSERT on every write.** Cleaner "one row per URL" semantics. Rejected: schema migration with backfill needed; loses the implicit history that Phase 2's dashboard wants.
+- **Redis as primary cache, Postgres as cold tier.** Two-store complexity for marginal latency gain; doesn't fit the user's "1-month cache" intent without a fat Upstash bill.
+- **Cache JSON in `text` blob in Postgres.** No real benefit over the existing `jsonb` columns; loses query-ability.
+
+### Hard rules (binding)
+
+1. The audit-result cache lives in Postgres only. Adding a Redis layer requires a new ADR.
+2. Freshness threshold lives in `CACHE_FRESHNESS_DAYS` in audit.service.ts; changing it requires a session-log entry stating the new value and the reason.
+3. AI failure responses must NOT be persisted (per audit 🔴 #3) — this stays true after this ADR.
+
+---
+
 ## How to add an ADR
 
-1. Increment number (next is 012)
+1. Increment number (next is 013)
 2. Use the template above
 3. Status options: `Proposed`, `Accepted`, `Superseded by ADR XXX`, `Deprecated`
 4. Never edit an Accepted ADR — supersede with a new one
