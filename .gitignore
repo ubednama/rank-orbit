@@ -1,0 +1,68 @@
+# Build output
+dist
+build
+out
+out-tsc
+.next
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Caches
+.cache
+.parcel-cache
+.eslintcache
+.tsbuildinfo
+*.tsbuildinfo
+
+# Coverage
+coverage
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+logs/
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# Vercel
+.vercel
+
+# Fly.io
+.fly/
+
+# Local artifacts
+*.crash.log
+crawler_crash.log

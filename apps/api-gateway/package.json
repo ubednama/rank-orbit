@@ -1,0 +1,33 @@
+{
+  "name": "@rank-orbit/api-gateway",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "webpack --config webpack.config.js --mode production",
+    "dev": "tsx watch src/main.ts",
+    "start": "node ../../dist/apps/api-gateway/main.js",
+    "test": "jest --config jest.config.cts",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "axios": "^1.13.6",
+    "bullmq": "^5.34.5",
+    "cors": "^2.8.6",
+    "drizzle-orm": "^0.45.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.2",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "ts-loader": "^9.5.2",
+    "tsx": "^4.20.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^7.0.2",
+    "webpack-node-externals": "^3.0.0"
+  }
+}

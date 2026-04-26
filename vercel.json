@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && cd apps/client && pnpm build",
+  "outputDirectory": "apps/client/.next",
+  "installCommand": "echo 'install handled by buildCommand'"
+}

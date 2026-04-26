@@ -1,0 +1,31 @@
+{
+  "name": "@rank-orbit/crawler-service",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "webpack --config webpack.config.js --mode production",
+    "dev": "tsx watch src/main.ts",
+    "start": "node ../../dist/apps/crawler-service/main.js",
+    "test": "jest --config jest.config.cts",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.0.2",
+    "cheerio": "^1.2.0",
+    "chrome-launcher": "^1.2.1",
+    "fastify": "^5.8.4",
+    "fastify-type-provider-zod": "^6.1.0",
+    "lighthouse": "^13.0.3",
+    "puppeteer": "^24.40.0",
+    "winston": "^3.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "ts-loader": "^9.5.2",
+    "tsx": "^4.20.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^7.0.2",
+    "webpack-node-externals": "^3.0.0"
+  }
+}
