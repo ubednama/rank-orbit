@@ -1,71 +1,46 @@
 /**
- * Manual migration runner for Supabase
- * Run: node libs/db/run-migration.mjs
+ * Migration runner for Supabase / Postgres.
+ * Applies every SQL file under libs/db/drizzle/ in order, tracked via the
+ * `__drizzle_migrations` bookkeeping table that drizzle-orm's migrator manages.
+ *
+ * Usage (from repo root):
+ *   node libs/db/run-migration.mjs
  */
 import { createRequire } from "module";
+import path from "path";
+import { fileURLToPath } from "url";
+
 const require = createRequire(import.meta.url);
-const { Pool } = require("pg");
-const path = require("path");
 const dotenv = require("dotenv");
+const postgres = require("postgres");
+const { drizzle } = require("drizzle-orm/postgres-js");
+const { migrate } = require("drizzle-orm/postgres-js/migrator");
 
-// Load env
-dotenv.config({ path: path.resolve(process.cwd(), "apps/api-gateway/.env") });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const rawUrl = process.env.DATABASE_URL;
-if (!rawUrl) {
-  console.error("DATABASE_URL not set");
+// Load env from the gateway's .env (where DATABASE_URL/DIRECT_URL live)
+dotenv.config({ path: path.resolve(__dirname, "../../apps/api-gateway/.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
+// Prefer DATABASE_URL (transaction pooler) — drizzle migrator works fine over it
+// and Supabase's free-tier session pooler can sometimes reject the project-scoped
+// "postgres.<project>" username. DIRECT_URL is still preferred when present.
+const url = process.env.DIRECT_URL || process.env.DATABASE_URL;
+if (!url) {
+  console.error("DIRECT_URL or DATABASE_URL must be set in apps/api-gateway/.env");
   process.exit(1);
 }
 
-// Parse manually — pg URL parser strips the project ref (e.g. postgres.xxxxx) from username
-const parsed = new URL(rawUrl);
-const pool = new Pool({
-  host: parsed.hostname,
-  port: parseInt(parsed.port) || 5432,
-  user: decodeURIComponent(parsed.username), // preserves "postgres.ajaaxqxejnkvdxpmqrxt"
-  password: decodeURIComponent(parsed.password),
-  database: parsed.pathname.slice(1),
-  ssl: { rejectUnauthorized: false },
-});
+const client = postgres(url, { max: 1, prepare: false });
+const db = drizzle(client);
 
-const sql = `
-CREATE TABLE IF NOT EXISTS "Audit" (
-  "id" text PRIMARY KEY NOT NULL,
-  "url" text NOT NULL,
-  "metadata" jsonb NOT NULL,
-  "lighthouse_metrics" jsonb NOT NULL,
-  "technical_analysis" jsonb NOT NULL,
-  "readability_analysis" jsonb NOT NULL,
-  "ai_analysis" jsonb NOT NULL,
-  "contentHash" text,
-  "createdAt" timestamp DEFAULT now() NOT NULL,
-  "updatedAt" timestamp DEFAULT now() NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS "audits_url_created_idx" ON "Audit" USING btree ("url","createdAt");
-
-CREATE TABLE IF NOT EXISTS "AuditUsage" (
-  "identifier" text NOT NULL,
-  "period" text NOT NULL,
-  "count" integer DEFAULT 0 NOT NULL,
-  "updatedAt" timestamp DEFAULT now() NOT NULL,
-  CONSTRAINT "AuditUsage_identifier_period_pk" PRIMARY KEY("identifier","period")
-);
-`;
-
-async function run() {
-  const client = await pool.connect();
-  try {
-    console.log("Running migrations...");
-    await client.query(sql);
-    console.log("✅ Migrations applied successfully!");
-  } catch (err) {
-    console.error("❌ Migration failed:", err.message);
-    process.exit(1);
-  } finally {
-    client.release();
-    await pool.end();
-  }
+try {
+  console.log("Running migrations from libs/db/drizzle/ ...");
+  await migrate(db, { migrationsFolder: path.join(__dirname, "drizzle") });
+  console.log("✅ Migrations applied.");
+} catch (err) {
+  console.error("❌ Migration failed:", err.message);
+  process.exitCode = 1;
+} finally {
+  await client.end();
 }
-
-run();
