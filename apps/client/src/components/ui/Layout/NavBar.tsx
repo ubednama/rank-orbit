@@ -61,7 +61,7 @@ export default function Navbar() {
           {!isLoading && user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600 dark:text-gray-400 hidden lg:block">
-                Hey, {user.firstName}
+                Hey, {user.email.split("@")[0]}
               </span>
               <button
                 onClick={logout}
@@ -128,7 +128,7 @@ export default function Navbar() {
               <>
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <User className="w-5 h-5" />
-                  <span>{user.fullName || user.firstName}</span>
+                  <span>{user.email}</span>
                 </div>
                 <button
                   onClick={logout}

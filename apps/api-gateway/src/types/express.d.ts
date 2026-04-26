@@ -1,6 +1,7 @@
-// Auth user shape (placeholder until phase 2 DIY JWT lands per ADR 002).
+// Auth user populated by optionalAuthMiddleware / requireAuth (per ADR 002 DIY JWT).
 export interface AuthUser {
   sub: string;
+  email: string;
 }
 
 declare global {
