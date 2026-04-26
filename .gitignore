@@ -66,3 +66,10 @@ ENV/
 # Local artifacts
 *.crash.log
 crawler_crash.log
+
+# Internal planning / scratch — NOT for the public repo
+handbook/
+notes/
+RANK_ORBIT_MASTER_GUIDE.md
+PORTING_GUIDE.md
+*.scratch.md
