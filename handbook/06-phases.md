@@ -68,12 +68,12 @@ Each phase has: **Goal**, **Scope** (with checkboxes — tick as you ship), **Do
 
 **Scope**:
 
-- [ ] **DIY auth phase 1** (login only — see [03-system-design.md](03-system-design.md#auth--diy-with-jsonwebtoken))
-  - [ ] `users` + `refresh_tokens` tables (drizzle migration)
-  - [ ] argon2id password hashing
-  - [ ] `POST /auth/signup`, `POST /auth/login`, `GET /auth/me`
-  - [ ] Auth middleware that verifies JWT and populates `req.user`
-  - [ ] Rate limit on `/auth/login` (5/15min per IP+email)
+- [x] **DIY auth phase 1** (login only — see [03-system-design.md](03-system-design.md#auth--diy-with-jsonwebtoken)) — **pulled forward from Phase 2 to support the user's E2E target (anon=1 free → sign in)**. Done 2026-04-26 via `feat/diy-jwt-auth`.
+  - [x] `users` table (drizzle migration `0002_add_users.sql`); `refresh_tokens` deferred to phase-2 work
+  - [x] argon2id password hashing (`@node-rs/argon2`, m=64MB, t=3, p=1)
+  - [x] `POST /auth/signup`, `POST /auth/login`, `GET /auth/me`, `POST /auth/logout` (stateless)
+  - [x] Auth middleware (`optionalAuthMiddleware`, `requireAuth`) that verifies JWT and populates `req.user`
+  - [ ] Rate limit on `/auth/login` (5/15min per IP+email) — deferred to a follow-up
 - [ ] **DIY auth phase 2** (refresh tokens with rotation) — same window, mostly additive
   - [ ] `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/sessions`
   - [ ] HttpOnly cookie handling

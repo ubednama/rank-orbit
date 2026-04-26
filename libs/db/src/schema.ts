@@ -1,4 +1,13 @@
-import { pgTable, text, jsonb, timestamp, index, integer, primaryKey } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  jsonb,
+  timestamp,
+  index,
+  integer,
+  primaryKey,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 export const audits = pgTable(
   "Audit",
@@ -17,6 +26,25 @@ export const audits = pgTable(
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (table) => [index("audits_url_created_idx").on(table.url, table.createdAt)],
+);
+
+/**
+ * DIY JWT auth users (per ADR 002 + handbook/03-system-design.md).
+ * Phase 1: email + password only. email_verified_at and refresh_tokens land in v3 / phase 2.
+ */
+export const users = pgTable(
+  "User",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    email: text("email").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    emailVerifiedAt: timestamp("email_verified_at"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("users_email_unique").on(table.email)],
 );
 
 /**
