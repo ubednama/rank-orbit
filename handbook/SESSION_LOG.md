@@ -16,6 +16,55 @@ Format:
 
 ---
 
+## 2026-04-26 — DIY JWT auth (backend + minimal client)
+
+Pulled "DIY auth phase 1" forward from Phase 2 because the user's E2E target requires sign-in to gate the second-and-beyond audit for anonymous users.
+
+**Done**:
+
+- **Schema**: added [`users` table](../libs/db/src/schema.ts) (id, email unique-indexed, password_hash, email_verified_at nullable, timestamps). Generated migration [`0002_add_users.sql`](../libs/db/drizzle/0002_add_users.sql). `refresh_tokens` intentionally not added — Phase 2 work.
+- **Backend** (api-gateway):
+  - [auth.service.ts](../apps/api-gateway/src/auth/auth.service.ts) — `signup`, `login` (with constant-time-ish dummy-hash on missing user), `getById`, `verifyAccessToken`. argon2id hashing per ADR 002 (`@node-rs/argon2`, memoryCost 64 MB / timeCost 3 / parallelism 1). HS256 JWT, 30-min access TTL, no refresh.
+  - [auth.routes.ts](../apps/api-gateway/src/auth/auth.routes.ts) — `POST /auth/signup`, `POST /auth/login`, `GET /auth/me` (gated by `requireAuth`), `POST /auth/logout` (stateless 204). Zod validation on signup (12+ char password) + login.
+  - [auth.middleware.ts](../apps/api-gateway/src/middleware/auth.middleware.ts) — `optionalAuthMiddleware` (populates `req.user` if Bearer token valid; never rejects) + `requireAuth` (401 on missing/invalid).
+  - Fail-fast `JWT_SECRET` check in [main.ts](../apps/api-gateway/src/main.ts) (must be ≥32 chars).
+  - Updated [.env.example](../apps/api-gateway/.env.example) — `JWT_SECRET` is now required (was commented out).
+  - Installed `@node-rs/argon2` + `zod` in api-gateway.
+- **Client** (Next.js):
+  - [UserContext.tsx](../apps/client/src/providers/UserContext.tsx) — real implementation: hydrates from `/auth/me` on mount, exposes `login` / `signup` / `logout` / `getAccessToken`. Token persisted in `localStorage` for Phase 1 simplicity (Phase 2 moves to memory + HttpOnly refresh cookie per ADR 002). Dropped the legacy Clerk-shaped `firstName` / `fullName` / `primaryEmailAddress` fields — the new shape is `{ id, email, createdAt }`.
+  - [login page](../apps/client/src/app/login/[[...rest]]/page.tsx) + [signup page](../apps/client/src/app/signup/[[...rest]]/page.tsx) — real forms, redirect-after-success, `?redirect_to=` query param, error display.
+  - [NavBar.tsx](../apps/client/src/components/ui/Layout/NavBar.tsx) — switched from `user.firstName` / `user.fullName` to `user.email`.
+
+**Decided**:
+
+- No new ADRs. ADR 002's Phase 1 design implemented as-spec. ADR 002's Phase 2 (refresh tokens, HttpOnly cookies) intentionally deferred.
+- Token storage: `localStorage` for Phase 1. **Reason**: simplest persistence across page reloads; ADR 002 hard rule against localStorage applies to the Phase 2 design (which adds refresh tokens + cookies). Phase 2 will move to memory-only + HttpOnly cookie.
+
+**Deferred**:
+
+- `refresh_tokens` table + rotation flow → Phase 2
+- HttpOnly cookie auth → Phase 2
+- `/auth/sessions` for "log out other devices" → Phase 2
+- Rate limit on `/auth/login` (5/15min) → Phase 1 follow-up
+- Wiring audit endpoints to `req.user` so signed-in users hit the 3/month tier → next branch `feat/anon-quota-signin-gate`
+- `sse_token` pattern for SSE auth → next branch (audit SSE doesn't currently auth)
+
+**Verification status**:
+
+- `make build` clean across all four apps (api-gateway, client, crawler-service, ai-service).
+- `pnpm exec tsc --noEmit` exits 0 in api-gateway and client.
+- **Migration not applied to Supabase yet** — run `node libs/db/run-migration.mjs` (or merge a follow-up that calls drizzle-kit push) before testing E2E. Local `.env` has a generated 32-byte `JWT_SECRET`.
+- **Not browser-tested**: would require running gateway + client + DB + Redis simultaneously; build + typecheck stand in for now. Real end-to-end smoke happens after the next branch wires audit-to-auth.
+
+**Next session**:
+
+1. Branch `feat/anon-quota-signin-gate` — wire `audit.routes.ts` to use `req.user` (when present) for the signed-in identifier; client modal on 429 redirecting to `/login?redirect_to=<current>`; SSE auth via `sse_token` pattern (POST `/audit/start` returns short-lived signed token; SSE GET uses it as query param). Run the migration as part of this branch's verification.
+2. Branch `feat/email-notifications` — `audit-notifications` BullMQ queue, react-email templates, Resend+SendGrid failover with circuit breaker. Write ADR 013.
+
+**Open questions**: same as previous (BullMQ consumer location).
+
+---
+
 ## 2026-04-26 — Phase 1: 30-day audit cache freshness (Postgres-only)
 
 **Done**:
