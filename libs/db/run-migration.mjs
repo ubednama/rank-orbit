@@ -31,7 +31,7 @@ if (!url) {
   process.exit(1);
 }
 
-const client = postgres(url, { max: 1, prepare: false });
+const client = postgres(url, { max: 1, prepare: false, ssl: "require" });
 const db = drizzle(client);
 
 try {
