@@ -16,6 +16,45 @@ Format:
 
 ---
 
+## 2026-04-26 — Anon-quota signin gate + SSE sse_token pattern
+
+The branch that finally makes the auth useful: paste URL → if anon quota exceeded → redirect to /login → after sign-in, signed-in 3/month tier kicks in.
+
+**Done**:
+
+- **Backend** (api-gateway):
+  - New [`POST /audit/start`](../apps/api-gateway/src/audit/audit.routes.ts) — runs through `optionalAuthMiddleware`, validates URL, pre-checks quota, issues a single-use `sse_token` (60s TTL) stored in Redis. Returns `{ sse_token, expires_at }` on success, or 429 with `requiresSignIn: true` for anon over quota.
+  - [`GET /audit/stream`](../apps/api-gateway/src/audit/audit.routes.ts) now consumes `?sse_token=<token>` instead of taking `url` directly. Token is atomically read+deleted via `redis.getdel` (single-use). The stored payload carries `identifier`, `isAnonymous`, and `url` — the user's JWT never enters the URL (per ADR 002 hard rule #1).
+  - [`HEAD /audit/stream`](../apps/api-gateway/src/audit/audit.routes.ts) kept for backward-compat; now routes through `optionalAuthMiddleware` so signed-in users see their tier.
+  - `getIdentity()` helper centralizes the "userId for signed-in, IP for anon" logic. `streamAudit` is called with `{ ip, isAnonymous, userId }` mapped from that.
+  - [sse-token.service.ts](../apps/api-gateway/src/audit/sse-token.service.ts) — `issueSseToken` (32-byte random hex, Redis EX 60) + `consumeSseToken` (atomic getdel). Own ioredis client; doesn't touch the audit-result cache (which is Postgres-only per ADR 012).
+- **Client** (Next.js):
+  - [useSEOAudit.ts](../apps/client/src/hooks/useSEOAudit.ts) rewrite: drops the `HEAD /audit/stream` pre-check, instead does `POST /audit/start` with optional Bearer header, then opens `EventSource` with `?sse_token=<token>`. On 429 with `requiresSignIn: true`, redirects to `/login?redirect_to=<current path>` (the login page already supports this query param from the previous PR).
+
+**Decided**: no new ADRs. ADR 002's hard rule #1 ("JWT never appears in URL query strings") is now actually satisfied — sse_token is opaque, not a JWT.
+
+**Deferred**:
+
+- HMAC-signed sse_tokens (handbook design uses `HMAC(user_id, ip, expires_at)`). Current implementation uses opaque random tokens stored in Redis — same single-use + TTL semantics, simpler ops, no key management. Revisit if Redis becomes a single point of failure.
+- IP-binding the sse_token (handbook design ties token to client IP). Skipped because mobile users hop networks; the 60s TTL + single-use already constrain replay risk.
+- AbortController propagation through the gateway (Phase 1 todo, separate concern).
+
+**Verification status**:
+
+- `make build` clean across all four apps.
+- api-gateway `pnpm exec tsc --noEmit` exits 0.
+- Pre-existing client test-spec error (`@testing-library/react` missing in `apps/client/specs/index.spec.tsx`) unrelated to this PR — already on the v2 todo backlog.
+- **Not browser-tested** — the migration from PR #2 still needs to be applied to Supabase before E2E works (`node libs/db/run-migration.mjs`).
+
+**Next session**:
+
+1. Branch `feat/email-notifications` — `audit-notifications` BullMQ queue + worker, react-email templates (`AuditCompleteEmail`, `WelcomeEmail`), Resend primary + SendGrid fallback with circuit breaker (Redis flag, 5min TTL, no periodic health checks). Write [ADR 013](08-decisions.md).
+2. Apply migration `0002_add_users.sql` to Supabase. Browser smoke the full E2E: anon paste URL → 1st audit succeeds → 2nd attempt redirects to /login → signup → audit succeeds with signed-in tier.
+
+**Open questions**: none new.
+
+---
+
 ## 2026-04-26 — DIY JWT auth (backend + minimal client)
 
 Pulled "DIY auth phase 1" forward from Phase 2 because the user's E2E target requires sign-in to gate the second-and-beyond audit for anonymous users.
