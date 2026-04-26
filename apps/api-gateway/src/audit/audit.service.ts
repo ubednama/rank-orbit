@@ -1,7 +1,6 @@
 import axios from "axios";
-import { db, audits, eq, desc } from "@db";
+import { db, audits, eq, and, gt, desc } from "@db";
 import crypto from "crypto";
-import Redis from "ioredis";
 import {
   CrawlResponse,
   AiAnalysisResponse,
@@ -30,38 +29,12 @@ export interface AuditStreamEvent {
   data: AuditStreamPayload;
 }
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const CRAWLER_URL = process.env.CRAWLER_SERVICE_URL || "http://localhost:3001";
 
-// Redis with graceful degradation — cache is skipped when Redis is unavailable
-let isRedisAvailable = false;
-
-const redisClient = new Redis(REDIS_URL, {
-  maxRetriesPerRequest: 1,
-  enableReadyCheck: true,
-  lazyConnect: false,
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 2000, 30000); // back off up to 30s
-    return delay;
-  },
-});
-
-redisClient.on("connect", () => {
-  isRedisAvailable = true;
-  logger.info("Redis connected — caching enabled");
-});
-redisClient.on("ready", () => {
-  isRedisAvailable = true;
-});
-redisClient.on("error", (err) => {
-  if (isRedisAvailable) {
-    logger.warn(`Redis unavailable: ${err.message} — caching disabled, proceeding without cache`);
-  }
-  isRedisAvailable = false;
-});
-redisClient.on("close", () => {
-  isRedisAvailable = false;
-});
+// Cached audits are served as-is for this window; older rows are treated as a
+// miss, which triggers a fresh crawl + AI re-run that writes a new row.
+const CACHE_FRESHNESS_DAYS = 30;
+const CACHE_FRESHNESS_MS = CACHE_FRESHNESS_DAYS * 24 * 60 * 60 * 1000;
 
 export class AuditService {
   private readonly rateLimitService = new RateLimitService();
@@ -164,51 +137,22 @@ export class AuditService {
           onEvent({ data: { type: "sanitized", data: { originalUrl: url, sanitizedUrl } } });
         }
 
-        const cacheKey = `audit:${sanitizedUrl}`;
-        let cached: { crawlResponse: AiCrawlResponse; aiResult: AiAnalysisResponse } | null = null;
-
         try {
-          if (isRedisAvailable) {
-            const cachedString = await redisClient.get(cacheKey);
-            if (cachedString) {
-              cached = JSON.parse(cachedString);
-            }
-          }
-        } catch (error: unknown) {
-          const msg = error instanceof Error ? error.message : String(error);
-          logger.warn(`Redis Cache Error: ${msg}. Proceeding to DB fallback.`);
-          isRedisAvailable = false;
-        }
-
-        if (cached) {
-          logger.info(`Serving from cache: ${sanitizedUrl}`);
-          onEvent({ data: { type: "status", message: "Found cached report. Loading..." } });
-          const clientData: CrawlResponse = {
-            metadata: cached.crawlResponse.metadata,
-            lighthouse_metrics: cached.crawlResponse.lighthouse_metrics,
-            technical_analysis: cached.crawlResponse.technical_analysis,
-            readability_analysis: cached.crawlResponse.readability_analysis,
-          };
-          onEvent({ data: { type: "crawler", data: clientData } });
-          onEvent({ data: { type: "ai", data: cached.aiResult } });
-          onEvent({ data: { type: "complete" } });
-          onComplete();
-          return;
-        }
-
-        try {
+          const freshThreshold = new Date(Date.now() - CACHE_FRESHNESS_MS);
           const latestAudits = await db
             .select()
             .from(audits)
-            .where(eq(audits.url, sanitizedUrl))
-            .orderBy(desc(audits.createdAt))
+            .where(and(eq(audits.url, sanitizedUrl), gt(audits.updatedAt, freshThreshold)))
+            .orderBy(desc(audits.updatedAt))
             .limit(1);
           const latestAudit = latestAudits[0];
 
           if (latestAudit) {
-            logger.info(`Serving from DB fallback: ${sanitizedUrl}`);
+            logger.info(
+              `Serving from cache: ${sanitizedUrl} (age within ${CACHE_FRESHNESS_DAYS}d)`,
+            );
             onEvent({
-              data: { type: "status", message: "Retrieved existing report from database." },
+              data: { type: "status", message: "Retrieved cached report from database." },
             });
 
             const clientData: CrawlResponse = {
@@ -356,20 +300,6 @@ export class AuditService {
         } catch (dbError: unknown) {
           const msg = dbError instanceof Error ? dbError.message : String(dbError);
           logger.error(`Failed to save to DB: ${msg}`);
-        }
-
-        if (isRedisAvailable) {
-          try {
-            await redisClient.set(
-              cacheKey,
-              JSON.stringify({ crawlResponse, aiResult }),
-              "EX",
-              86400,
-            );
-          } catch (cacheError: unknown) {
-            const msg = cacheError instanceof Error ? cacheError.message : String(cacheError);
-            logger.warn(`Failed to write to Redis cache: ${msg}`);
-          }
         }
 
         onEvent({ data: { type: "complete" } });
