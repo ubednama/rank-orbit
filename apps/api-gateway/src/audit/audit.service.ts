@@ -1,5 +1,5 @@
 import axios from "axios";
-import { db, audits, eq, and, gt, desc } from "@db";
+import { db, audits, users, eq, and, gt, desc } from "@db";
 import crypto from "crypto";
 import {
   CrawlResponse,
@@ -15,7 +15,10 @@ import {
 import { AnalyzeRequestDto } from "./dto/analyze-request.dto";
 import { RateLimitService } from "./rate-limit.service";
 import { publishAnalysisJob } from "../worker";
+import { enqueueAuditCompleteEmail } from "../emails/notifications.worker";
 import { logger } from "../logger";
+
+const APP_URL = process.env.APP_URL || "http://localhost:5000";
 
 export type AuditStreamPayload =
   | { type: "status"; message: string }
@@ -107,6 +110,35 @@ export class AuditService {
       const msg = error instanceof Error ? error.message : String(error);
       throw new Error(`Invalid or unreachable URL: ${msg}`, { cause: error });
     }
+  }
+
+  /**
+   * Look up the user's email and enqueue an audit-complete notification.
+   * Best-effort; quietly skips if user/email is missing.
+   */
+  private async sendAuditCompleteEmail(
+    userId: string,
+    auditId: string,
+    url: string,
+    aiAnalysis: AIAnalysis | null,
+  ): Promise<void> {
+    const [user] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (!user?.email) return;
+
+    const seoScore = typeof aiAnalysis?.seo_score === "number" ? aiAnalysis.seo_score : null;
+    const summary = aiAnalysis?.summary ?? "Your audit is complete.";
+
+    await enqueueAuditCompleteEmail({
+      to: user.email,
+      url,
+      seoScore,
+      summary: summary.slice(0, 500),
+      reportUrl: `${APP_URL}/seo/${auditId}`,
+    });
   }
 
   /**
@@ -392,6 +424,17 @@ export class AuditService {
         onEvent({ data: { type: "ai", data: aiResult } });
         onEvent({ data: { type: "complete" } });
         onComplete();
+
+        // Notification email — signed-in users only. Fire and forget; failure
+        // is non-fatal for the audit. The notifications worker handles its own
+        // retry + DLQ via BullMQ (per ADR 013).
+        if (!isAnonymous && userId) {
+          this.sendAuditCompleteEmail(userId, auditId, sanitizedUrl, aiResult.ai_analysis).catch(
+            (err) => {
+              logger.warn(`Failed to enqueue audit-complete email: ${err.message}`);
+            },
+          );
+        }
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         logger.error("Audit stream failed", { error: msg, auditId });

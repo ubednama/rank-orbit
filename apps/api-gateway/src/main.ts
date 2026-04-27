@@ -4,6 +4,7 @@ import helmet from "helmet";
 import { routes } from "./routes";
 import { logger } from "./logger";
 import { startWorker } from "./worker";
+import { startNotificationsWorker } from "./emails/notifications.worker";
 
 // Fail fast on missing or weak JWT_SECRET — auth is security-critical.
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -11,6 +12,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 }
 
 startWorker();
+startNotificationsWorker();
 
 const app = express();
 const port = parseInt(process.env.API_GATEWAY_PORT || "3333", 10);
