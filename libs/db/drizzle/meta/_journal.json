@@ -29,6 +29,13 @@
       "when": 1777230959228,
       "tag": "0003_staged_audit_persistence",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777279202404,
+      "tag": "0004_refresh_tokens",
+      "breakpoints": true
     }
   ]
 }

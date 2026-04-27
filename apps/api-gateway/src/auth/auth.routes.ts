@@ -1,6 +1,12 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, CookieOptions } from "express";
 import { ZodError } from "zod";
-import { AuthService, AuthError } from "./auth.service";
+import {
+  AuthService,
+  AuthError,
+  AuthResult,
+  REFRESH_COOKIE_NAME,
+  REFRESH_COOKIE_TTL_MS,
+} from "./auth.service";
 import { LoginSchema } from "./dto/login.dto";
 import { SignUpSchema } from "./dto/signup.dto";
 import { requireAuth } from "../middleware/auth.middleware";
@@ -8,6 +14,39 @@ import { logger } from "../logger";
 
 export const authRouter = Router();
 const authService = new AuthService();
+
+const isProd = process.env.NODE_ENV === "production";
+
+/**
+ * HttpOnly cookie carrying the refresh token. Path-scoped so it's only
+ * sent to /auth/* routes — keeps it off every audit/health/etc request.
+ */
+function refreshCookieOpts(): CookieOptions {
+  return {
+    httpOnly: true,
+    secure: isProd, // dev (http://localhost) needs secure: false
+    sameSite: isProd ? "strict" : "lax",
+    path: "/api/auth",
+    maxAge: REFRESH_COOKIE_TTL_MS,
+  };
+}
+
+function clientMeta(req: Request) {
+  return {
+    userAgent: req.headers["user-agent"] ?? null,
+    ip: req.ip ?? req.socket.remoteAddress ?? null,
+  };
+}
+
+/** Send the AuthResult to the client: refresh token in cookie, the rest in body. */
+function sendAuthResult(res: Response, result: AuthResult, status = 200): void {
+  res.cookie(REFRESH_COOKIE_NAME, result.refreshToken, refreshCookieOpts());
+  res.status(status).json({
+    user: result.user,
+    accessToken: result.accessToken,
+    expiresAt: result.expiresAt,
+  });
+}
 
 function handleAuthError(res: Response, err: unknown): void {
   if (err instanceof AuthError) {
@@ -29,8 +68,8 @@ function handleAuthError(res: Response, err: unknown): void {
 authRouter.post("/signup", async (req: Request, res: Response) => {
   try {
     const dto = SignUpSchema.parse(req.body);
-    const result = await authService.signup(dto);
-    res.status(201).json(result);
+    const result = await authService.signup(dto, clientMeta(req));
+    sendAuthResult(res, result, 201);
   } catch (err) {
     handleAuthError(res, err);
   }
@@ -39,8 +78,8 @@ authRouter.post("/signup", async (req: Request, res: Response) => {
 authRouter.post("/login", async (req: Request, res: Response) => {
   try {
     const dto = LoginSchema.parse(req.body);
-    const result = await authService.login(dto);
-    res.status(200).json(result);
+    const result = await authService.login(dto, clientMeta(req));
+    sendAuthResult(res, result, 200);
   } catch (err) {
     handleAuthError(res, err);
   }
@@ -59,8 +98,36 @@ authRouter.get("/me", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// Phase 1 logout is stateless: the client just discards the token. Server returns 204.
-// Server-side blacklist + refresh-token revocation lands in phase 2.
-authRouter.post("/logout", (_req: Request, res: Response) => {
-  res.status(204).end();
+/**
+ * Rotate the refresh token. Reads the cookie, issues a new access token + new
+ * refresh token, revokes the old one. On token-reuse the entire chain is
+ * revoked (handled inside auth.service).
+ */
+authRouter.post("/refresh", async (req: Request, res: Response) => {
+  try {
+    const cookieToken: string | undefined = req.cookies?.[REFRESH_COOKIE_NAME];
+    const result = await authService.refresh(cookieToken ?? "", clientMeta(req));
+    sendAuthResult(res, result, 200);
+  } catch (err) {
+    // Clear the (now invalid) cookie so the client doesn't loop on /refresh
+    if (err instanceof AuthError && err.status === 401) {
+      res.clearCookie(REFRESH_COOKIE_NAME, { path: refreshCookieOpts().path });
+    }
+    handleAuthError(res, err);
+  }
+});
+
+/**
+ * Logout: revoke the refresh token in DB and clear the cookie. Always 204
+ * regardless of whether the token was valid (idempotent, no information leak).
+ */
+authRouter.post("/logout", async (req: Request, res: Response) => {
+  try {
+    const cookieToken: string | undefined = req.cookies?.[REFRESH_COOKIE_NAME];
+    await authService.logout(cookieToken);
+    res.clearCookie(REFRESH_COOKIE_NAME, { path: refreshCookieOpts().path });
+    res.status(204).end();
+  } catch (err) {
+    handleAuthError(res, err);
+  }
 });
