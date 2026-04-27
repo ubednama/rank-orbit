@@ -74,12 +74,13 @@ export function useSEOAudit(url: string | null) {
 
       try {
         const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3333";
-        const accessToken = getAccessToken();
+        const accessToken = await getAccessToken();
 
         // POST /audit/start authenticates (optional), pre-checks quota, and issues a single-use
         // sse_token (60s TTL). EventSource opens with that token in the query string.
         const startRes = await fetch(`${gatewayUrl}/api/audit/start`, {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

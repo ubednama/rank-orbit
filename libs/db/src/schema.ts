@@ -12,7 +12,7 @@ import {
 
 /**
  * DIY JWT auth users (per ADR 002 + handbook/03-system-design.md).
- * Phase 1: email + password only. email_verified_at and refresh_tokens land in v3 / phase 2.
+ * Phase 1: email + password only. email_verified_at lands in v3.
  */
 export const users = pgTable(
   "User",
@@ -27,6 +27,41 @@ export const users = pgTable(
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("users_email_unique").on(table.email)],
+);
+
+/**
+ * Refresh tokens (Phase 2 of ADR 002).
+ *
+ * - `tokenHash` is SHA-256 of the raw token; raw token only ever lives in the
+ *   client's HttpOnly cookie. Hashing means a DB leak alone can't be replayed.
+ * - On every successful /auth/refresh call we ROTATE: insert a new row,
+ *   set the old row's `revokedAt`, and store the new id in `replacedBy`.
+ * - Reuse of a revoked token is treated as a compromise signal (revoke the
+ *   whole chain — handler responsibility).
+ * - `userAgent` / `ip` are stored for the future "active sessions" UI; they
+ *   are NOT trust signals (mobile users hop networks).
+ */
+export const refreshTokens = pgTable(
+  "RefreshToken",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("tokenHash").notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    revokedAt: timestamp("revokedAt"),
+    replacedBy: text("replacedBy"),
+    userAgent: text("userAgent"),
+    ip: text("ip"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("refresh_tokens_hash_unique").on(table.tokenHash),
+    index("refresh_tokens_user_idx").on(table.userId, table.expiresAt),
+  ],
 );
 
 /**
