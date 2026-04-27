@@ -1,6 +1,19 @@
+---
+title: Rank Orbit AI Service
+emoji: 🚀
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: SEO insights via LangChain + Google Gemini for the rank-orbit gateway
+---
+
 # ai-service
 
 Stateless Python FastAPI service that takes crawler output (HTML + metadata + Lighthouse metrics) and returns AI-generated SEO insights via Google Gemini (`langchain-google-genai`).
+
+> **Hugging Face Spaces note**: the YAML frontmatter above is read by the HF Spaces UI when this directory is pushed as a Space repo. The `app_port: 7860` matches what `Dockerfile` exposes by default. Set `GOOGLE_API_KEY` (and later `INTERNAL_TOKEN_SECRET`) in **Settings → Repository secrets** of the Space.
 
 See [../../handbook/02-architecture.md](../../handbook/02-architecture.md) for how this service fits into the system, and [../../handbook/03-system-design.md](../../handbook/03-system-design.md#auth--diy-with-jsonwebtoken) for the trust boundary (gateway-only via `X-Internal-Token` HMAC, phase 1).
 
