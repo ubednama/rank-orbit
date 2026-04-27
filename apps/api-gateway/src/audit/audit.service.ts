@@ -31,8 +31,9 @@ export interface AuditStreamEvent {
 
 const CRAWLER_URL = process.env.CRAWLER_SERVICE_URL || "http://localhost:3001";
 
-// Cached audits are served as-is for this window; older rows are treated as a
-// miss, which triggers a fresh crawl + AI re-run that writes a new row.
+// Cache freshness window for `status = 'complete'` rows. Older rows are treated
+// as a miss; they remain in the table as history but a fresh re-audit overwrites
+// nothing — it INSERTs a new row.
 const CACHE_FRESHNESS_DAYS = 30;
 const CACHE_FRESHNESS_MS = CACHE_FRESHNESS_DAYS * 24 * 60 * 60 * 1000;
 
@@ -108,6 +109,32 @@ export class AuditService {
     }
   }
 
+  /**
+   * Mark an in-flight audit row as failed. Best-effort; swallows DB errors
+   * because the response path doesn't depend on this succeeding.
+   */
+  private async markFailed(
+    auditId: string,
+    stage: "crawler" | "ai",
+    error: unknown,
+  ): Promise<void> {
+    try {
+      const message = error instanceof Error ? error.message : String(error);
+      await db
+        .update(audits)
+        .set({
+          status: "failed",
+          errorStage: stage,
+          errorMessage: message.slice(0, 500),
+          updatedAt: new Date(),
+        })
+        .where(eq(audits.id, auditId));
+    } catch (dbError) {
+      const msg = dbError instanceof Error ? dbError.message : String(dbError);
+      logger.warn(`Failed to mark audit ${auditId} as failed: ${msg}`);
+    }
+  }
+
   streamAudit(
     url: string,
     onEvent: (event: AuditStreamEvent) => void,
@@ -118,9 +145,12 @@ export class AuditService {
     },
   ) {
     const { ip, isAnonymous, userId } = options;
-    // Rate limit identifier: userId for signed-in users, IP for anonymous
+    // Rate-limit identifier: userId for signed-in users, IP for anonymous
     const identifier = isAnonymous ? ip : (userId ?? ip);
+
     const execute = async () => {
+      let auditId: string | null = null;
+
       try {
         logger.info(`Starting execution for: ${url}`);
         onEvent({ data: { type: "status", message: "Validating URL..." } });
@@ -137,84 +167,54 @@ export class AuditService {
           onEvent({ data: { type: "sanitized", data: { originalUrl: url, sanitizedUrl } } });
         }
 
+        // ---- Cache lookup: only `complete` rows within the freshness window ----
         try {
           const freshThreshold = new Date(Date.now() - CACHE_FRESHNESS_MS);
-          const latestAudits = await db
+          const [cached] = await db
             .select()
             .from(audits)
-            .where(and(eq(audits.url, sanitizedUrl), gt(audits.updatedAt, freshThreshold)))
+            .where(
+              and(
+                eq(audits.url, sanitizedUrl),
+                eq(audits.status, "complete"),
+                gt(audits.updatedAt, freshThreshold),
+              ),
+            )
             .orderBy(desc(audits.updatedAt))
             .limit(1);
-          const latestAudit = latestAudits[0];
 
-          if (latestAudit) {
+          if (cached) {
             logger.info(
               `Serving from cache: ${sanitizedUrl} (age within ${CACHE_FRESHNESS_DAYS}d)`,
             );
             onEvent({
               data: { type: "status", message: "Retrieved cached report from database." },
             });
-
-            const clientData: CrawlResponse = {
-              metadata: latestAudit.metadata as SeoMetadata,
-              lighthouse_metrics: latestAudit.lighthouse_metrics as LighthouseMetrics,
-              technical_analysis: latestAudit.technical_analysis as TechnicalAnalysis,
-              readability_analysis: latestAudit.readability_analysis as ReadabilityStats,
-            };
-
-            const aiResult: AiAnalysisResponse = {
-              ai_analysis: latestAudit.ai_analysis as AIAnalysis,
-            };
-
-            onEvent({ data: { type: "crawler", data: clientData } });
-            onEvent({ data: { type: "ai", data: aiResult } });
+            onEvent({
+              data: {
+                type: "crawler",
+                data: {
+                  metadata: cached.metadata as SeoMetadata,
+                  lighthouse_metrics: cached.lighthouse_metrics as LighthouseMetrics,
+                  technical_analysis: cached.technical_analysis as TechnicalAnalysis,
+                  readability_analysis: cached.readability_analysis as ReadabilityStats,
+                },
+              },
+            });
+            onEvent({
+              data: { type: "ai", data: { ai_analysis: cached.ai_analysis as AIAnalysis } },
+            });
             onEvent({ data: { type: "complete" } });
             onComplete();
             return;
           }
         } catch (dbError: unknown) {
+          // Fail open on cache lookup errors — proceed to fresh audit.
           const msg = dbError instanceof Error ? dbError.message : String(dbError);
-          logger.error(`DB Fallback lookup failed: ${msg}`);
+          logger.error(`Cache lookup failed: ${msg}`);
         }
 
-        logger.info(`Starting fresh audit (Crawl + DB Parallel)...`);
-        onEvent({ data: { type: "status", message: "Starting audit..." } });
-
-        const crawlPromise = this.crawl({ url: sanitizedUrl }).catch((e) => {
-          if (
-            e.message.includes("ECONNREFUSED") ||
-            e.message.includes("502") ||
-            e.message.includes("503")
-          ) {
-            throw new Error("Crawler Service Unavailable. Please try again later.");
-          }
-          throw e;
-        });
-
-        const dbLookupPromise = db
-          .select()
-          .from(audits)
-          .where(eq(audits.url, sanitizedUrl))
-          .orderBy(desc(audits.createdAt))
-          .limit(1)
-          .catch(() => []);
-
-        const [crawlResponse, latestAuditsDb] = await Promise.all([crawlPromise, dbLookupPromise]);
-        const latestAudit = latestAuditsDb[0];
-
-        const clientCrawlData: CrawlResponse = {
-          metadata: crawlResponse.metadata,
-          lighthouse_metrics: crawlResponse.lighthouse_metrics,
-          technical_analysis: crawlResponse.technical_analysis,
-          readability_analysis: crawlResponse.readability_analysis,
-        };
-
-        onEvent({ data: { type: "crawler", data: clientCrawlData } });
-
-        const pageContent = crawlResponse.page_content || "";
-        const newHash = crypto.createHash("sha256").update(pageContent).digest("hex");
-
-        // Rate limiting: check DB quota before running AI
+        // ---- Quota check BEFORE creating an audit row or doing any work ----
         const { allowed, remaining } = await this.rateLimitService.checkQuota(
           identifier,
           isAnonymous,
@@ -233,22 +233,111 @@ export class AuditService {
           onComplete();
           return;
         }
+
+        // ---- Stage 0: INSERT a 'crawling' row so the audit is tracked from t=0 ----
+        try {
+          const [inserted] = await db
+            .insert(audits)
+            .values({
+              url: sanitizedUrl,
+              userId: isAnonymous ? null : (userId ?? null),
+              status: "crawling",
+            })
+            .returning({ id: audits.id });
+          auditId = inserted.id;
+        } catch (dbError: unknown) {
+          // Without a row we can't track the audit; surface the error to the client.
+          const msg = dbError instanceof Error ? dbError.message : String(dbError);
+          logger.error(`Failed to insert audit row: ${msg}`);
+          throw new Error(`Could not start audit: database unavailable`, { cause: dbError });
+        }
+
+        logger.info(`Starting fresh audit (auditId=${auditId}) for ${sanitizedUrl}`);
+        onEvent({ data: { type: "status", message: "Starting audit..." } });
+
+        // ---- Stage 1: Crawl ----
+        let crawlResponse: AiCrawlResponse;
+        try {
+          crawlResponse = await this.crawl({ url: sanitizedUrl });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          if (msg.includes("ECONNREFUSED") || msg.includes("502") || msg.includes("503")) {
+            await this.markFailed(auditId, "crawler", e);
+            throw new Error("Crawler Service Unavailable. Please try again later.", { cause: e });
+          }
+          await this.markFailed(auditId, "crawler", e);
+          throw e;
+        }
+
+        const pageContent = crawlResponse.page_content || "";
+        const newHash = crypto.createHash("sha256").update(pageContent).digest("hex");
+
+        // ---- SAVE crawler results to DB BEFORE emitting `crawler` event ----
+        try {
+          await db
+            .update(audits)
+            .set({
+              metadata: crawlResponse.metadata,
+              lighthouse_metrics: crawlResponse.lighthouse_metrics,
+              technical_analysis: crawlResponse.technical_analysis,
+              readability_analysis: crawlResponse.readability_analysis,
+              contentHash: newHash,
+              status: "ai_running",
+              crawlCompletedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(audits.id, auditId));
+        } catch (dbError: unknown) {
+          const msg = dbError instanceof Error ? dbError.message : String(dbError);
+          logger.error(`Failed to save crawler results (auditId=${auditId}): ${msg}`);
+          // Continue — the user still gets the data even if we couldn't persist.
+        }
+
+        // Now emit the crawler event (data is already persisted)
+        onEvent({
+          data: {
+            type: "crawler",
+            data: {
+              metadata: crawlResponse.metadata,
+              lighthouse_metrics: crawlResponse.lighthouse_metrics,
+              technical_analysis: crawlResponse.technical_analysis,
+              readability_analysis: crawlResponse.readability_analysis,
+            },
+          },
+        });
+
+        // ---- Stage 2: AI (with content-hash reuse from prior complete audit) ----
         logger.info(
           `[RateLimit] ${identifier} has ${remaining - 1} AI insights remaining after this one`,
         );
 
         let aiResult: AiAnalysisResponse;
 
-        if (latestAudit && latestAudit.contentHash === newHash && latestAudit.ai_analysis) {
+        // Optimisation: if a prior complete audit for this URL has the same content
+        // hash, reuse its AI analysis (saves a Gemini call). Cheap query — the
+        // (url, status, updatedAt) index covers it.
+        const [priorComplete] = await db
+          .select()
+          .from(audits)
+          .where(
+            and(
+              eq(audits.url, sanitizedUrl),
+              eq(audits.status, "complete"),
+              eq(audits.contentHash, newHash),
+            ),
+          )
+          .orderBy(desc(audits.updatedAt))
+          .limit(1)
+          .catch(() => [] as Array<typeof audits.$inferSelect>);
+
+        if (priorComplete && priorComplete.ai_analysis) {
           logger.info(`Content unchanged for ${sanitizedUrl}. Reusing stored AI analysis.`);
           onEvent({
             data: { type: "status", message: "Content unchanged. Retrieving existing insights..." },
           });
-          aiResult = {
-            ai_analysis: latestAudit.ai_analysis as AIAnalysis,
-          };
+          aiResult = { ai_analysis: priorComplete.ai_analysis as AIAnalysis };
         } else {
-          logger.info("Queueing AI insights");
+          logger.info(`Queueing AI insights (auditId=${auditId})`);
           onEvent({ data: { type: "status", message: "Added to Analysis Queue..." } });
 
           try {
@@ -257,56 +346,59 @@ export class AuditService {
               metadata: crawlResponse.metadata,
               lighthouse_metrics: crawlResponse.lighthouse_metrics,
             });
-
-            // Increment usage count in DB after successful AI
             await this.rateLimitService.incrementUsage(identifier, isAnonymous);
             logger.info(`[RateLimit] Usage incremented for ${identifier}`);
           } catch (aiError: unknown) {
+            // Per audit 🔴 #3: do NOT persist a synthetic AI failure response.
+            // Mark the row failed and tell the client.
+            await this.markFailed(auditId, "ai", aiError);
             const msg = aiError instanceof Error ? aiError.message : String(aiError);
             logger.error(`AI Service unavailable: ${msg}`);
             onEvent({
               data: {
-                type: "status",
-                message: "AI Service unavailable. Generating partial report...",
+                type: "error",
+                message: "AI Service unavailable. Please try again in a moment.",
               },
             });
-            aiResult = {
-              ai_analysis: {
-                summary: "AI Service Unavailable",
-                action_plan: ["**Service Issue**: The AI analysis service is currently down."],
-                detailed_report:
-                  "# Service Notice\n\nWe could not generate AI insights at this time.",
-                seo_score: 0,
-                score_rationale: "Service Unavailable",
-                keyword_analysis: "N/A",
-              },
-            };
+            onEvent({ data: { type: "complete" } });
+            onComplete();
+            return;
           }
         }
 
-        onEvent({ data: { type: "ai", data: aiResult } });
-
+        // ---- SAVE AI results to DB BEFORE emitting `ai` event ----
         try {
-          await db.insert(audits).values({
-            url: sanitizedUrl,
-            metadata: crawlResponse.metadata,
-            lighthouse_metrics: crawlResponse.lighthouse_metrics,
-            technical_analysis: crawlResponse.technical_analysis,
-            readability_analysis: crawlResponse.readability_analysis,
-            ai_analysis: aiResult.ai_analysis,
-            contentHash: newHash,
-            updatedAt: new Date(),
-          });
+          const seoScore =
+            typeof aiResult.ai_analysis?.seo_score === "number"
+              ? aiResult.ai_analysis.seo_score
+              : null;
+
+          await db
+            .update(audits)
+            .set({
+              ai_analysis: aiResult.ai_analysis,
+              aiScore: seoScore,
+              status: "complete",
+              aiCompletedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(audits.id, auditId));
         } catch (dbError: unknown) {
           const msg = dbError instanceof Error ? dbError.message : String(dbError);
-          logger.error(`Failed to save to DB: ${msg}`);
+          logger.error(`Failed to save AI result (auditId=${auditId}): ${msg}`);
+          // Continue — emit the result anyway.
         }
 
+        onEvent({ data: { type: "ai", data: aiResult } });
         onEvent({ data: { type: "complete" } });
         onComplete();
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        logger.error("Audit stream failed", { error: msg });
+        logger.error("Audit stream failed", { error: msg, auditId });
+        // If we created a row but didn't already mark it failed, do so now.
+        if (auditId) {
+          await this.markFailed(auditId, "crawler", error);
+        }
         onEvent({ data: { type: "error", message: msg } });
         onComplete();
       }
