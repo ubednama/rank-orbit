@@ -5,7 +5,7 @@
   "private": true,
   "packageManager": "pnpm@10.23.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=20 <25"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
@@ -52,6 +52,7 @@
       "@parcel/watcher",
       "@swc/core",
       "esbuild",
+      "msgpackr-extract",
       "puppeteer",
       "sharp",
       "unrs-resolver"
