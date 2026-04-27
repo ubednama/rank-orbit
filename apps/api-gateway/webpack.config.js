@@ -16,7 +16,7 @@ module.exports = {
     clean: true,
   },
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: [".ts", ".tsx", ".js"],
     alias: {
       "@shared/types": join(__dirname, "../../libs/shared/types/src/index.ts"),
       "@shared/utils": join(__dirname, "../../libs/shared/utils/src/index.ts"),
@@ -26,7 +26,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/,
         exclude: /node_modules/,
         loader: "ts-loader",
         options: {

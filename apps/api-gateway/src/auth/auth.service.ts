@@ -3,6 +3,10 @@ import { hash, verify } from "@node-rs/argon2";
 import jwt from "jsonwebtoken";
 import { LoginDto } from "./dto/login.dto";
 import { SignUpDto } from "./dto/signup.dto";
+import { enqueueWelcomeEmail } from "../emails/notifications.worker";
+import { logger } from "../logger";
+
+const APP_URL = process.env.APP_URL || "http://localhost:5000";
 
 // Phase 1 per handbook/03-system-design.md: access token only, 30-min TTL.
 // Refresh tokens land in phase 2 (HttpOnly cookie).
@@ -75,6 +79,12 @@ export class AuthService {
       .returning({ id: users.id, email: users.email });
 
     const { token, expiresAt } = signAccessToken(created.id, created.email);
+
+    // Welcome email — fire and forget; failure is non-fatal for signup.
+    enqueueWelcomeEmail({ to: created.email, appUrl: APP_URL }).catch((err) => {
+      logger.warn(`Failed to enqueue welcome email for ${created.email}: ${err.message}`);
+    });
+
     return {
       user: { id: created.id, email: created.email },
       accessToken: token,

@@ -3,12 +3,13 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
-    "types": ["node"],
+    "types": ["node", "react"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "target": "es2022",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["jest.config.ts", "jest.config.cts", "src/**/*.spec.ts", "src/**/*.test.ts"]
 }
