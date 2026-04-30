@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p 5000",
     "lint": "next lint",
-    "test": "jest --config jest.config.cts"
+    "test": "jest --config jest.config.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.2.0",

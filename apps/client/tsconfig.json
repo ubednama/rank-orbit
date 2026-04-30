@@ -40,7 +40,7 @@
   "exclude": [
     "node_modules",
     "jest.config.ts",
-    "jest.config.cts",
+    "jest.config.js",
     "**/*.spec.ts",
     "**/*.test.ts",
     "src/**/*.spec.ts",

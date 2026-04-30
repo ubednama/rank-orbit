@@ -17,7 +17,7 @@ start:
 	node ../../dist/apps/crawler-service/main.js
 
 test:
-	pnpm exec jest --config jest.config.cts
+	pnpm exec jest --config jest.config.js
 
 lint:
 	pnpm exec eslint src/

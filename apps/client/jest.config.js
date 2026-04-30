@@ -1,7 +1,11 @@
-import nextJest from "next/jest.js";
-
 // next/jest handles TS/JSX transform via SWC; no @nx/react preset needed.
-const createJestConfig = nextJest({ dir: "./" });
+// Plain CJS so Node 24 / Jest 30 don't fight over module resolution.
+
+const nextJest = require("next/jest.js");
+
+// Use __dirname so this resolves to apps/client/ regardless of where jest is
+// invoked from (root jest.config.js orchestration vs. running this file directly).
+const createJestConfig = nextJest({ dir: __dirname });
 
 const config = {
   displayName: "client",
@@ -15,4 +19,4 @@ const config = {
   },
 };
 
-export default createJestConfig(config);
+module.exports = createJestConfig(config);

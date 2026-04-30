@@ -1,7 +1,7 @@
-import type { Config } from "jest";
+// Self-contained jest config (no jest.preset.js — Nx-only).
+// Plain CJS for Node 24 / Jest 30 compatibility.
 
-// Self-contained config (no jest.preset.js — Nx-only).
-const config: Config = {
+module.exports = {
   displayName: "db",
   testEnvironment: "node",
   transform: {
@@ -10,5 +10,3 @@ const config: Config = {
   moduleFileExtensions: ["ts", "js", "html"],
   coverageDirectory: "../../coverage/libs/db",
 };
-
-export default config;
