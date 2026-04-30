@@ -40,8 +40,8 @@ export default function PerformanceScore({
                   (score || 0) >= 90
                     ? "text-green-600 dark:text-green-500"
                     : (score || 0) >= 50
-                    ? "text-yellow-600 dark:text-yellow-500"
-                    : "text-red-600 dark:text-red-500"
+                      ? "text-yellow-600 dark:text-yellow-500"
+                      : "text-red-600 dark:text-red-500"
                 }`}
               >
                 {Math.round(score || 0)}
@@ -54,8 +54,8 @@ export default function PerformanceScore({
                   (score || 0) >= 90
                     ? "bg-green-500"
                     : (score || 0) >= 50
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
                 }`}
                 style={{ width: `${Math.round(score || 0)}%` }}
               />

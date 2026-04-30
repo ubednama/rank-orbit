@@ -10,7 +10,7 @@ interface ReportHeaderProps {
   loading: boolean;
 }
 
-export function ReportHeader({ url, metadata, loading }: ReportHeaderProps) {
+export function ReportHeader({ url, metadata: _metadata, loading }: ReportHeaderProps) {
   const [mounted, setMounted] = useState(false);
   const [dateStr, setDateStr] = useState("");
   const [timeStr, setTimeStr] = useState("");
