@@ -22,7 +22,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node 24 matches the runtime images (Dockerfiles use node:24-slim)
+          # and lighthouse@13 requires >=22.19.
+          node-version: 24
           cache: pnpm
 
       - name: Setup Python
