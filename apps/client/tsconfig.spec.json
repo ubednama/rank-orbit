@@ -9,7 +9,7 @@
   },
   "include": [
     "jest.config.ts",
-    "jest.config.cts",
+    "jest.config.js",
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
     "src/**/*.test.tsx",

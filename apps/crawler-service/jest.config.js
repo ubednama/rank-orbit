@@ -1,8 +1,8 @@
-import type { Config } from "jest";
+// Self-contained jest config (no jest.preset.js — Nx-only).
+// Plain CJS for Node 24 / Jest 30 compatibility.
 
-// Self-contained config (no jest.preset.js — Nx-only).
-const config: Config = {
-  displayName: "api-gateway",
+module.exports = {
+  displayName: "crawler-service",
   testEnvironment: "node",
   transform: {
     "^.+\\.[tj]s$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }],
@@ -11,9 +11,6 @@ const config: Config = {
   moduleNameMapper: {
     "^@shared/types$": "<rootDir>/../../libs/shared/types/src/index.ts",
     "^@shared/utils$": "<rootDir>/../../libs/shared/utils/src/index.ts",
-    "^@db$": "<rootDir>/../../libs/db/src/index.ts",
   },
-  coverageDirectory: "../../coverage/apps/api-gateway",
+  coverageDirectory: "../../coverage/apps/crawler-service",
 };
-
-export default config;

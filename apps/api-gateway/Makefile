@@ -15,7 +15,7 @@ start:
 	node ../../dist/apps/api-gateway/main.js
 
 test:
-	pnpm exec jest --config jest.config.cts
+	pnpm exec jest --config jest.config.js
 
 lint:
 	pnpm exec eslint src/

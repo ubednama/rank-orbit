@@ -20,7 +20,7 @@ lint:
 	pnpm exec next lint
 
 test:
-	pnpm exec jest --config jest.config.cts
+	pnpm exec jest --config jest.config.js
 
 clean:
 	rm -rf .next dist
