@@ -51,7 +51,7 @@ async function run(url) {
     if (chrome) {
       try {
         chrome.kill();
-      } catch (_err) {
+      } catch {
         /* ignore */
       }
     }
