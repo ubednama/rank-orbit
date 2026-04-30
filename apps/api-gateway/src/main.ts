@@ -18,16 +18,19 @@ startNotificationsWorker();
 const app = express();
 const port = parseInt(process.env.API_GATEWAY_PORT || "3333", 10);
 
+// Single source of truth for the public client URL: APP_URL.
+// Used both as the CORS origin and in email template links. Required.
+const APP_URL = process.env.APP_URL;
+if (!APP_URL) {
+  throw new Error("APP_URL env var must be set (used for CORS + email links)");
+}
+logger.info(`CORS origin: ${APP_URL}`);
+
 // Middleware
 app.use(helmet());
 app.use(
   cors({
-    origin: [
-      "http://localhost:4200",
-      "http://localhost:3000",
-      "http://localhost:5000",
-      "https://rank-orbit.vercel.app",
-    ],
+    origin: APP_URL,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
   }),

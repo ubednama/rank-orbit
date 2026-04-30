@@ -27,8 +27,8 @@ COPY apps/api-gateway/package.json apps/api-gateway/
 COPY apps/client/package.json apps/client/
 COPY apps/ai-service/pyproject.toml apps/ai-service/
 COPY libs/db/package.json libs/db/
-COPY libs/shared/types/package.json libs/shared/types/
-COPY libs/shared/utils/package.json libs/shared/utils/
+# libs/shared/types and libs/shared/utils have NO package.json — they're
+# webpack path aliases bundled inline at build time, not pnpm packages.
 
 # Install crawler + transitive workspace deps (lets puppeteer postinstall pull Chromium)
 RUN pnpm install --frozen-lockfile --filter "@rank-orbit/crawler-service..."

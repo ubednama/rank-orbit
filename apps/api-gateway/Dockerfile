@@ -21,8 +21,9 @@ COPY apps/client/package.json apps/client/
 COPY apps/crawler-service/package.json apps/crawler-service/
 COPY apps/ai-service/pyproject.toml apps/ai-service/
 COPY libs/db/package.json libs/db/
-COPY libs/shared/types/package.json libs/shared/types/
-COPY libs/shared/utils/package.json libs/shared/utils/
+# libs/shared/types and libs/shared/utils have NO package.json — they're
+# webpack path aliases (@shared/types, @shared/utils) bundled inline at
+# build time, not pnpm packages. Don't COPY their package.json.
 
 # Install only what api-gateway + its workspace deps need
 RUN pnpm install --frozen-lockfile --filter "@rank-orbit/api-gateway..."
