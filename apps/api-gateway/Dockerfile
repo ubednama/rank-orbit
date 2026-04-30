@@ -25,8 +25,12 @@ COPY libs/db/package.json libs/db/
 # webpack path aliases (@shared/types, @shared/utils) bundled inline at
 # build time, not pnpm packages. Don't COPY their package.json.
 
-# Install only what api-gateway + its workspace deps need
-RUN pnpm install --frozen-lockfile --filter "@rank-orbit/api-gateway..."
+# Install ALL workspace deps. Earlier we used `--filter "@rank-orbit/api-gateway..."`
+# to install just api-gateway's deps, but webpack bundles libs/db inline (via the
+# @db alias) and libs/db imports `postgres`/`drizzle-orm` from its own deps. Without
+# those installed, webpack fails with "Can't resolve 'postgres'". Installing
+# everything is ~50MB more in the deps stage but never bites again.
+RUN pnpm install --frozen-lockfile
 
 # ---- Build stage ----
 FROM deps AS build

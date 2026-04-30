@@ -30,8 +30,10 @@ COPY libs/db/package.json libs/db/
 # libs/shared/types and libs/shared/utils have NO package.json — they're
 # webpack path aliases bundled inline at build time, not pnpm packages.
 
-# Install crawler + transitive workspace deps (lets puppeteer postinstall pull Chromium)
-RUN pnpm install --frozen-lockfile --filter "@rank-orbit/crawler-service..."
+# Install ALL workspace deps. Filtering causes webpack to fail resolving deps
+# from libs/* that get bundled inline (same issue as api-gateway). Puppeteer's
+# postinstall runs and pulls Chromium during this step.
+RUN pnpm install --frozen-lockfile
 
 # ---- Build stage ----
 FROM deps AS build
