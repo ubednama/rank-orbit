@@ -1,45 +1,36 @@
-# Fly.io app config for the rank-orbit api-gateway.
+# fly.toml app configuration file generated for rank-orbit on 2026-04-30T13:07:03Z
 #
-# To deploy from the dashboard:
-#   1. Create a Fly app named "rank-orbit-api-gateway" (or change app= below to match)
-#   2. Set the build context to the repo root (Dockerfile path: apps/api-gateway/Dockerfile)
-#   3. Add secrets in the dashboard (Settings → Secrets):
-#        DATABASE_URL, JWT_SECRET, REDIS_URL, RESEND_API_KEY (optional),
-#        SENDGRID_API_KEY (optional), EMAIL_FROM, APP_URL
-#      AI_SERVICE_URL + CRAWLER_SERVICE_URL go in [env] below (public URLs).
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# To deploy from the CLI: `fly deploy --dockerfile apps/api-gateway/Dockerfile`
-# (run from repo root so the build context is correct).
 
-app = "rank-orbit-api-gateway"
-primary_region = "fra"  # change to whichever Supabase region you picked
+app = 'rank-orbit'
+primary_region = 'fra'
 
 [build]
-dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-NODE_ENV = "production"
-LOG_LEVEL = "info"
-API_GATEWAY_PORT = "3333"
-# Public URLs of the other services — update these once they're deployed
-CRAWLER_SERVICE_URL = "https://rank-orbit-crawler.fly.dev"
-AI_SERVICE_URL = "https://<your-hf-username>-rank-orbit-ai.hf.space/api"
+  AI_SERVICE_URL = 'https://<your-hf-username>-rank-orbit-ai.hf.space/api'
+  API_GATEWAY_PORT = '3333'
+  CRAWLER_SERVICE_URL = 'https://rank-orbit-crawler.fly.dev'
+  LOG_LEVEL = 'info'
+  NODE_ENV = 'production'
 
 [http_service]
-internal_port = 3333
-force_https = true
-auto_stop_machines = "stop"     # scale-to-zero when idle (free-tier friendly)
-auto_start_machines = true
-min_machines_running = 0
-processes = ["app"]
+  internal_port = 3333
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
-[[http_service.checks]]
-grace_period = "10s"
-interval = "30s"
-method = "GET"
-timeout = "5s"
-path = "/api/health"
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/api/health'
 
 [[vm]]
-size = "shared-cpu-1x"
-memory = "512mb"
+  size = 'shared-cpu-1x'
+  memory = '512mb'
