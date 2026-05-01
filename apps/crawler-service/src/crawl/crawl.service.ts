@@ -295,16 +295,21 @@ export class CrawlService {
 
     return new Promise((resolve) => {
       /**
-       * Worker script location:
-       * - Production (webpack dist): dist/apps/crawler-service/assets/lighthouse-worker.mjs (cwd = workspace root)
-       * - Development (tsx): apps/crawler-service/src/assets/lighthouse-worker.mjs (resolved via import.meta.url)
+       * Worker script location candidates, in priority order. The worker MUST
+       * live somewhere where Node's ESM resolution can walk up and find the
+       * `lighthouse` package — that means inside apps/crawler-service/ (which
+       * has the pnpm node_modules symlink farm).
+       *
+       * - Production container: apps/crawler-service/assets/lighthouse-worker.mjs (cwd=/repo)
+       * - Older container layout: dist/apps/crawler-service/assets/... (kept for backward compat)
+       * - Development (tsx): apps/crawler-service/src/assets/... (resolved via import.meta.url)
        */
-      const distWorker = path.join(
-        process.cwd(),
-        "dist/apps/crawler-service/assets/lighthouse-worker.mjs",
-      );
-      const srcWorker = fileURLToPath(new URL("../assets/lighthouse-worker.mjs", import.meta.url));
-      const workerPath = fs.existsSync(distWorker) ? distWorker : srcWorker;
+      const candidates = [
+        path.join(process.cwd(), "apps/crawler-service/assets/lighthouse-worker.mjs"),
+        path.join(process.cwd(), "dist/apps/crawler-service/assets/lighthouse-worker.mjs"),
+        fileURLToPath(new URL("../assets/lighthouse-worker.mjs", import.meta.url)),
+      ];
+      const workerPath = candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
 
       this.logger.info(`Spawning Lighthouse worker at: ${workerPath} for url: ${url}`);
 

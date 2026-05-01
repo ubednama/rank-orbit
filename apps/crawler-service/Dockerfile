@@ -66,9 +66,11 @@ COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/apps/crawler-service/node_modules ./apps/crawler-service/node_modules
 COPY --from=build /repo/apps/crawler-service/package.json ./apps/crawler-service/
 COPY --from=build /repo/dist/apps/crawler-service/main.js ./apps/crawler-service/main.js
-# Lighthouse worker spawn does process.cwd()/dist/apps/crawler-service/assets/...
-# so keep cwd=/repo and assets at the matching path.
-COPY --from=build /repo/dist/apps/crawler-service/assets ./dist/apps/crawler-service/assets
+# The lighthouse worker is a separate Node subprocess. Its `import lighthouse`
+# resolves modules from the worker's directory upward — which means the worker
+# MUST live inside apps/crawler-service/ where the pnpm symlink to lighthouse
+# is reachable. Putting it under dist/ would dangle (no node_modules walk path).
+COPY --from=build /repo/dist/apps/crawler-service/assets ./apps/crawler-service/assets
 # Puppeteer downloads Chromium to ~/.cache/puppeteer during install
 COPY --from=build /root/.cache/puppeteer /root/.cache/puppeteer
 
