@@ -56,19 +56,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxss1 libxtst6 lsb-release wget xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Preserve /repo path so pnpm's symlink tree stays valid AND main.js lives
+# next to its node_modules so Node resolves modules correctly. Same fix
+# pattern as api-gateway. Plus assets need to be at the cwd-relative path
+# the lighthouse worker spawn expects.
+WORKDIR /repo
 
-# Bundled main.js + assets (lighthouse-worker.mjs) + node_modules (Chromium lives in puppeteer)
-COPY --from=build /repo/dist/apps/crawler-service/main.js ./main.js
-COPY --from=build /repo/dist/apps/crawler-service/assets ./assets
 COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/apps/crawler-service/node_modules ./apps/crawler-service/node_modules
-# Puppeteer downloads Chromium to a known cache during install
+COPY --from=build /repo/apps/crawler-service/package.json ./apps/crawler-service/
+COPY --from=build /repo/dist/apps/crawler-service/main.js ./apps/crawler-service/main.js
+# Lighthouse worker spawn does process.cwd()/dist/apps/crawler-service/assets/...
+# so keep cwd=/repo and assets at the matching path.
+COPY --from=build /repo/dist/apps/crawler-service/assets ./dist/apps/crawler-service/assets
+# Puppeteer downloads Chromium to ~/.cache/puppeteer during install
 COPY --from=build /root/.cache/puppeteer /root/.cache/puppeteer
+
+# WORKDIR=/repo so process.cwd() satisfies the lighthouse worker path lookup.
+# main.js's location (/repo/apps/crawler-service/main.js) is what governs
+# Node's module resolution, NOT cwd.
+WORKDIR /repo
 
 ENV NODE_ENV=production
 ENV PUPPETEER_HEADLESS=true
 EXPOSE 3001
 
-# Lighthouse worker spawn expects cwd-relative dist path; align cwd accordingly
-CMD ["node", "main.js"]
+CMD ["node", "apps/crawler-service/main.js"]
