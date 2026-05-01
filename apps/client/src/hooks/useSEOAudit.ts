@@ -46,6 +46,12 @@ export function useSEOAudit(url: string | null) {
   useEffect(() => {
     let eventSource: EventSource | null = null;
     let isActive = true;
+    // AbortController so React StrictMode's double-mount + unmount cycle in dev
+    // doesn't fire two simultaneous POST /audit/start requests.
+    const abortController = new AbortController();
+    // Single toast id we update as the audit progresses, instead of stacking
+    // a new toast per `status` event.
+    const progressToastId = `audit-${url}`;
 
     setSanitizedUrl(null);
     sanitizedUrlRef.current = null;
@@ -71,6 +77,7 @@ export function useSEOAudit(url: string | null) {
       setIsRateLimited(false);
       setLoading(true);
       setAiLoading(false);
+      toast.loading("Starting audit…", { id: progressToastId });
 
       try {
         const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3333";
@@ -81,6 +88,7 @@ export function useSEOAudit(url: string | null) {
         const startRes = await fetch(`${gatewayUrl}/api/audit/start`, {
           method: "POST",
           credentials: "include",
+          signal: abortController.signal,
           headers: {
             "Content-Type": "application/json",
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -121,17 +129,18 @@ export function useSEOAudit(url: string | null) {
 
             switch (parsed.type) {
               case "status":
-                if (parsed.message?.toLowerCase().includes("queue")) {
-                  toast.message("Queued", { description: parsed.message });
-                } else {
-                  toast.info(parsed.message);
-                }
+                // Single rolling toast — update the same id as progress flows
+                // (validating → starting → crawling → queued → analyzing).
+                toast.loading(parsed.message, { id: progressToastId });
                 break;
 
               case "sanitized":
                 setSanitizedUrl(parsed.data.sanitizedUrl);
                 sanitizedUrlRef.current = parsed.data.sanitizedUrl;
-                toast.success(`URL sanitized: ${parsed.data.sanitizedUrl}`);
+                // Reflect in the rolling toast (same id) instead of a separate one.
+                toast.loading(`URL sanitized: ${parsed.data.sanitizedUrl}`, {
+                  id: progressToastId,
+                });
                 break;
 
               case "crawler":
@@ -174,14 +183,16 @@ export function useSEOAudit(url: string | null) {
                 });
                 if (isActive) {
                   setAiLoading(false);
+                  // Resolve the rolling progress toast — success or soft-fail
+                  // both close the same toast id so it doesn't pile up.
                   if (aiUnavailable) {
                     toast.warning(
                       parsed.data.message ||
                         "AI insights are temporarily unavailable. Try again in a moment.",
-                      { duration: 6000 },
+                      { id: progressToastId, duration: 6000 },
                     );
                   } else {
-                    toast.success("AI Analysis Complete!");
+                    toast.success("Audit complete", { id: progressToastId, duration: 3000 });
                   }
                 }
                 break;
@@ -193,12 +204,15 @@ export function useSEOAudit(url: string | null) {
                   parsed.message?.toLowerCase().includes("limit")
                 ) {
                   toast.error("You've reached your free limit. Accounts are coming soon.", {
+                    id: progressToastId,
                     duration: 6000,
                   });
                   if (isActive) setIsRateLimited(true);
                 } else {
                   if (isActive) setError(parsed.message);
-                  toast.error(parsed.message || "An error occurred during the audit");
+                  toast.error(parsed.message || "An error occurred during the audit", {
+                    id: progressToastId,
+                  });
                 }
                 eventSource?.close();
                 if (isActive) {
@@ -234,8 +248,11 @@ export function useSEOAudit(url: string | null) {
           eventSource?.close();
         };
       } catch (e) {
+        // Aborted by cleanup (StrictMode double-mount in dev) — silent.
+        if (e instanceof DOMException && e.name === "AbortError") return;
         console.error("Audit setup failed:", e);
         if (isActive) setLoading(false);
+        toast.dismiss(progressToastId);
       }
     };
 
@@ -243,9 +260,12 @@ export function useSEOAudit(url: string | null) {
 
     return () => {
       isActive = false;
+      abortController.abort();
       if (eventSource) eventSource.close();
+      // Don't leave a "loading" toast hanging when the effect tears down.
+      toast.dismiss(progressToastId);
     };
-  }, [url]);
+  }, [url, getAccessToken, router]);
 
   return {
     data: reportData,
