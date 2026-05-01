@@ -43,14 +43,23 @@ RUN pnpm exec webpack --config webpack.config.js --mode production
 # ---- Runtime stage ----
 FROM node:24-slim AS runtime
 
-WORKDIR /app
+# Preserve the /repo path so pnpm's symlink tree stays valid. Symlinks at
+# /repo/apps/api-gateway/node_modules/<pkg> point at relative
+# ../../node_modules/.pnpm/<pkg>@<ver>/node_modules/<pkg>, so both must
+# be at the same /repo/... path as the build stage.
+#
+# CRITICAL: Node resolves modules from the script's directory upward, NOT
+# from process.cwd(). So main.js must live INSIDE apps/api-gateway/ to find
+# node_modules there. Flattening to /app/main.js + /app/node_modules makes
+# the symlinks dangle.
+WORKDIR /repo
 
-# Bundled main.js + the workspace node_modules tree (webpack externalizes deps)
-COPY --from=build /repo/dist/apps/api-gateway/main.js ./main.js
 COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/apps/api-gateway/node_modules ./apps/api-gateway/node_modules
-COPY --from=build /repo/libs ./libs
 COPY --from=build /repo/apps/api-gateway/package.json ./apps/api-gateway/
+COPY --from=build /repo/dist/apps/api-gateway/main.js ./apps/api-gateway/main.js
+
+WORKDIR /repo/apps/api-gateway
 
 ENV NODE_ENV=production
 EXPOSE 3333
