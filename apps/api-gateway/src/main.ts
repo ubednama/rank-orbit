@@ -64,6 +64,10 @@ app.use(
   },
 );
 
-app.listen(port, () => {
-  logger.info(`🚀 API Gateway running on: http://localhost:${port}/api`);
+// Bind explicitly to 0.0.0.0 so Fly's proxy (on a separate IPv4-mapped interface
+// inside the Firecracker VM) can reach us. Without an explicit host, Node's
+// default bind on some container runtimes leaves the IPv4 interface unreachable
+// and Fly errors with "[PM05] failed to connect to machine".
+app.listen(port, "0.0.0.0", () => {
+  logger.info(`🚀 API Gateway listening on 0.0.0.0:${port}`);
 });
