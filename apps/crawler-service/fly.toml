@@ -11,7 +11,7 @@
 #   - From CLI: `fly deploy --dockerfile apps/crawler-service/Dockerfile` from repo root
 
 app = "rank-orbit-crawler"
-primary_region = "fra"
+primary_region = "bom"
 
 [build]
 dockerfile = "Dockerfile"
