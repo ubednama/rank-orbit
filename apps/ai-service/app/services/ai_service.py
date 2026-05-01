@@ -111,20 +111,16 @@ class AIInsightGenerator:
             raise e
 
     def generate(self, data: AnalyzeRequest) -> Dict:
+        # Per audit issue #3: never synthesize fake AI responses on failure.
+        # Raise HTTPException with the appropriate upstream status so the gateway's
+        # graceful-fallback path can keep the audit useful (crawler stage stays).
+        from fastapi import HTTPException
+
         if not self.chain:
-            return {
-                "summary": "AI Insights are unavailable because the API Key is not configured. Please add your Gemini API Key to enable specific recommendations.",
-                "action_plan": [
-                    "**Configure API Key**: Add GOOGLE_API_KEY to your environment variables.",
-                    "**Retry Audit**: Run the audit again to see AI-powered insights.",
-                    "**Check Documentation**: Refer to the setup guide for API configuration.",
-                ],
-                "keyword_analysis": "N/A - API Restricted",
-                "detailed_report": "# Service Notice\n\nAI features are currently disabled due to missing configuration.\n\n## Next Steps\nPlease configure the backend services with a valid Gemini API key to unlock full reports.",
-                "seo_score": 0,
-                "score_rationale": "Score unavailable. API key missing.",
-                "error": "not_configured",
-            }
+            raise HTTPException(
+                status_code=503,
+                detail="AI service not configured (GOOGLE_API_KEY missing)",
+            )
 
         # Double clean content to pure text for token efficiency
         soup = BeautifulSoup(data.page_content, "html.parser")
@@ -147,25 +143,32 @@ class AIInsightGenerator:
             parsed_result = self._clean_and_parse_json(raw_result)
             return parsed_result
 
+        except json.JSONDecodeError as e:
+            # Gemini returned malformed JSON. Treat as a transient upstream issue.
+            logger.error(f"Gemini returned unparseable JSON: {e}")
+            raise HTTPException(status_code=502, detail="AI provider returned invalid response")
+
         except Exception as e:
-            error_msg = str(e).lower()
-            error_code = "server_error"
+            error_msg = str(e)
+            lower = error_msg.lower()
 
-            if "429" in error_msg or "quota" in error_msg or "resource exhausted" in error_msg:
-                error_code = "quota_exceeded"
+            if "429" in lower or "quota" in lower or "resource exhausted" in lower:
+                logger.warning(f"Gemini quota exhausted: {error_msg}")
+                raise HTTPException(status_code=429, detail="AI provider quota exceeded")
 
+            if "503" in error_msg or "unavailable" in lower or "overloaded" in lower:
+                logger.warning(f"Gemini overloaded: {error_msg}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="AI provider temporarily unavailable. Please try again.",
+                )
+
+            # Unknown failure — surface as 500 so gateway falls back gracefully.
             logger.error(f"AI generation failed: {e}")
-            return {
-                "summary": "We encountered an issue generating AI insights for this page.",
-                "action_plan": [
-                    "**Retry Later**: The AI service might be temporarily unavailable."
-                ],
-                "keyword_analysis": "Error during generation",
-                "detailed_report": f"# Error Report\n\nAn error occurred while processing the AI analysis.\n\nError details: {error_msg}",
-                "seo_score": 0,
-                "score_rationale": "Analysis failed due to a server error.",
-                "error": error_code,
-            }
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI generation failed: {error_msg[:200]}",
+            )
 
 
 # Singleton instance
