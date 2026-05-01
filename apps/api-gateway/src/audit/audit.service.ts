@@ -1,5 +1,5 @@
 import axios from "axios";
-import { db, audits, users, eq, and, gt, desc } from "@db";
+import { db, audits, users, eq, and, gt, desc, isNotNull } from "@db";
 import crypto from "crypto";
 import {
   CrawlResponse,
@@ -20,10 +20,19 @@ import { logger } from "../logger";
 
 const APP_URL = process.env.APP_URL || "http://localhost:5000";
 
+/**
+ * AI event variants:
+ * - normal:  { ai_analysis: AIAnalysis }                                              — full AI report
+ * - soft fail: { ai_analysis: null, unavailable: true, message: string }              — AI was down; crawler data still valid
+ */
+export type AiStreamPayload =
+  | AiAnalysisResponse
+  | { ai_analysis: null; unavailable: true; message: string };
+
 export type AuditStreamPayload =
   | { type: "status"; message: string }
   | { type: "crawler"; data: CrawlResponse }
-  | { type: "ai"; data: AiAnalysisResponse }
+  | { type: "ai"; data: AiStreamPayload }
   | { type: "error"; message: string }
   | { type: "sanitized"; data: { originalUrl: string; sanitizedUrl: string } }
   | { type: "complete" };
@@ -210,6 +219,10 @@ export class AuditService {
                 eq(audits.url, sanitizedUrl),
                 eq(audits.status, "complete"),
                 gt(audits.updatedAt, freshThreshold),
+                // Exclude rows where AI failed during the original audit — the
+                // crawler half is valid but we want the next request to retry
+                // AI rather than serve a permanent null.
+                isNotNull(audits.ai_analysis),
               ),
             )
             .orderBy(desc(audits.updatedAt))
@@ -381,15 +394,41 @@ export class AuditService {
             await this.rateLimitService.incrementUsage(identifier, isAnonymous);
             logger.info(`[RateLimit] Usage incremented for ${identifier}`);
           } catch (aiError: unknown) {
-            // Per audit 🔴 #3: do NOT persist a synthetic AI failure response.
-            // Mark the row failed and tell the client.
-            await this.markFailed(auditId, "ai", aiError);
-            const msg = aiError instanceof Error ? aiError.message : String(aiError);
-            logger.error(`AI Service unavailable: ${msg}`);
+            // Graceful AI fallback. The crawler stage is already saved + emitted,
+            // so the audit is partially useful. Mark the row complete with
+            // ai_analysis=null + errorStage='ai' (per audit 🔴 #3 we still don't
+            // synthesize fake AI data). Cache lookup excludes null-AI rows so
+            // the next audit on this URL retries AI organically.
+            const aiMsg = aiError instanceof Error ? aiError.message : String(aiError);
+            logger.warn(`AI unavailable (auditId=${auditId}): ${aiMsg}`);
+
+            try {
+              await db
+                .update(audits)
+                .set({
+                  status: "complete",
+                  errorStage: "ai",
+                  errorMessage: aiMsg.slice(0, 500),
+                  aiCompletedAt: new Date(),
+                  updatedAt: new Date(),
+                })
+                .where(eq(audits.id, auditId));
+            } catch (dbErr) {
+              const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+              logger.error(`Failed to mark audit ai-unavailable (auditId=${auditId}): ${msg}`);
+            }
+
+            // Soft AI event with null analysis (NOT an `error` event — crawler
+            // data is valid; client renders crawler section + an "AI insights
+            // temporarily unavailable" notice instead of a hard error).
             onEvent({
               data: {
-                type: "error",
-                message: "AI Service unavailable. Please try again in a moment.",
+                type: "ai",
+                data: {
+                  ai_analysis: null,
+                  unavailable: true,
+                  message: "AI insights are temporarily unavailable. Please retry in a moment.",
+                },
               },
             });
             onEvent({ data: { type: "complete" } });
