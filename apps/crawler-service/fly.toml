@@ -1,42 +1,35 @@
-# Fly.io app config for the rank-orbit crawler-service.
+# fly.toml app configuration file generated for rank-orbit-crawler on 2026-05-01T13:02:07Z
 #
-# Heads up: Chromium needs RAM. 1GB is the floor for reliable Lighthouse runs
-# on real-world pages. 512MB will OOM on heavy sites.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# Once we migrate to Browserless.io (per ADR 005), this service shrinks back
-# to a thin Fastify HTTP wrapper and can drop to shared-cpu-1x@512mb.
-#
-# Deploy:
-#   - From dashboard: build context = repo root, Dockerfile = apps/crawler-service/Dockerfile
-#   - From CLI: `fly deploy --dockerfile apps/crawler-service/Dockerfile` from repo root
 
-app = "rank-orbit-crawler"
-primary_region = "bom"
+app = 'rank-orbit-crawler'
+primary_region = 'bom'
 
 [build]
-dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-NODE_ENV = "production"
-LOG_LEVEL = "info"
-CRAWLER_PORT = "3001"
-PUPPETEER_HEADLESS = "true"
+  CRAWLER_PORT = '3001'
+  LOG_LEVEL = 'info'
+  NODE_ENV = 'production'
+  PUPPETEER_HEADLESS = 'true'
 
 [http_service]
-internal_port = 3001
-force_https = true
-auto_stop_machines = "stop"     # scale-to-zero
-auto_start_machines = true
-min_machines_running = 0
-processes = ["app"]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
-[[http_service.checks]]
-grace_period = "20s"            # crawler boots are slower (Chromium spin-up)
-interval = "30s"
-method = "GET"
-timeout = "5s"
-path = "/api/health"
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    method = 'GET'
+    path = '/api/health'
 
 [[vm]]
-size = "shared-cpu-1x"
-memory = "1024mb"               # Chromium needs the headroom
+  size = 'shared-cpu-1x'
+  memory = '1024mb'
