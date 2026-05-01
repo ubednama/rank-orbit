@@ -152,25 +152,40 @@ export function useSEOAudit(url: string | null) {
                 }
                 break;
 
-              case "ai":
+              case "ai": {
+                const aiUnavailable =
+                  parsed.data?.unavailable === true || parsed.data?.ai_analysis === null;
                 setReportData((prev) => {
                   if (!prev) return null;
                   const finalData = {
                     ...prev,
-                    ai_analysis: parsed.data.ai_analysis,
+                    ai_analysis: parsed.data.ai_analysis ?? null,
                   } as SEOReportData;
-                  // Dual-cache: original URL + sanitized URL
-                  CacheService.set(cacheKey, finalData);
-                  if (sanitizedUrlRef.current) {
-                    CacheService.set(`seo_audit_${sanitizedUrlRef.current}`, finalData);
+                  // Only cache fully-successful audits — when AI is unavailable
+                  // the gateway also excludes the row from the DB cache so we
+                  // retry next time. Match that behaviour client-side.
+                  if (!aiUnavailable) {
+                    CacheService.set(cacheKey, finalData);
+                    if (sanitizedUrlRef.current) {
+                      CacheService.set(`seo_audit_${sanitizedUrlRef.current}`, finalData);
+                    }
                   }
                   return finalData;
                 });
                 if (isActive) {
                   setAiLoading(false);
-                  toast.success("AI Analysis Complete!");
+                  if (aiUnavailable) {
+                    toast.warning(
+                      parsed.data.message ||
+                        "AI insights are temporarily unavailable. Try again in a moment.",
+                      { duration: 6000 },
+                    );
+                  } else {
+                    toast.success("AI Analysis Complete!");
+                  }
                 }
                 break;
+              }
 
               case "error":
                 if (
