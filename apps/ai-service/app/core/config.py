@@ -8,11 +8,13 @@ ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
-    
+
     PROJECT_NAME: str = "Rank Orbit AI Service"
     GOOGLE_API_KEY: str = ""
     MODEL_NAME: str = "gemini-1.5-flash"
-    AI_SERVICE_PORT: int = 8000
+    # Default 7860 — Hugging Face Spaces convention; matches the production
+    # Dockerfile so local mirrors deploy.
+    AI_SERVICE_PORT: int = 7860
 
     class Config:
         env_file = str(ENV_PATH)

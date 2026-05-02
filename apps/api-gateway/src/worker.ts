@@ -6,7 +6,7 @@ import type { AnalyzeRequestDto } from "./audit/dto/analyze-request.dto";
 import { logger } from "./logger";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000/api";
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:7860/api";
 const QUEUE_NAME = "ai-analysis";
 const JOB_WAIT_TIMEOUT_MS = 60_000;
 const AXIOS_TIMEOUT_MS = 50_000;

@@ -4,7 +4,9 @@ SHELL := /bin/bash
 
 VENV ?= venv
 PYTHON ?= python3.13
-PORT ?= 8000
+# Default 7860 — Hugging Face Spaces convention; matches the production
+# Dockerfile so local mirrors deploy.
+PORT ?= 7860
 
 .PHONY: help install build dev test lint format clean dockerbuild dockerrun
 

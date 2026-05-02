@@ -14,6 +14,7 @@ import {
 } from "@shared/types";
 import { AnalyzeRequestDto } from "./dto/analyze-request.dto";
 import { RateLimitService } from "./rate-limit.service";
+import { assertSafeUrl } from "./ssrf-guard";
 import { publishAnalysisJob } from "../worker";
 import { enqueueAuditCompleteEmail } from "../emails/notifications.worker";
 import { logger } from "../logger";
@@ -41,7 +42,7 @@ export interface AuditStreamEvent {
   data: AuditStreamPayload;
 }
 
-const CRAWLER_URL = process.env.CRAWLER_SERVICE_URL || "http://localhost:3001";
+const CRAWLER_URL = process.env.CRAWLER_SERVICE_URL || "http://localhost:4000";
 
 // Cache freshness window for `status = 'complete'` rows. Older rows are treated
 // as a miss; they remain in the table as history but a fresh re-audit overwrites
@@ -106,6 +107,18 @@ export class AuditService {
       }
 
       const sanitizedUrl = parsedUrl.toString();
+
+      // SSRF guard: block private/loopback/metadata targets BEFORE we open
+      // any network connection. The HEAD request below would otherwise let
+      // a malicious user pivot through the gateway into our internal network.
+      const safe = await assertSafeUrl(sanitizedUrl);
+      if (!safe.ok) {
+        // Generic message to the client — don't leak whether it was a DNS
+        // failure vs. a private-IP block (helps a probe distinguish "your
+        // internal subnet uses 10.x" from "we're allowed to resolve").
+        logger.warn(`[SSRF] rejected ${sanitizedUrl}: ${safe.reason}`);
+        throw new Error("URL not allowed");
+      }
 
       await axios.head(sanitizedUrl, {
         timeout: 30000,

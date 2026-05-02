@@ -22,7 +22,7 @@ See [../../handbook/02-architecture.md](../../handbook/02-architecture.md) for h
 ```sh
 make install     # create venv + install pinned deps
 cp .env.example .env.local   # then fill in GOOGLE_API_KEY
-make dev         # uvicorn --reload on http://localhost:8000
+make dev         # uvicorn --reload on http://localhost:7860
 ```
 
 ## Endpoints
