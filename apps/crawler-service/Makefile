@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
-PORT ?= 3001
+# Default 4000 — conventional Node.js dev port (Apollo Server, Phoenix).
+PORT ?= 4000
 
 .PHONY: install build dev start test lint clean
 

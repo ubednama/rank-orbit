@@ -14,12 +14,7 @@ server.setSerializerCompiler(serializerCompiler);
 
 // Middleware
 server.register(cors, {
-  origin: [
-    "http://localhost:4200",
-    "http://localhost:3000",
-    "http://localhost:5000",
-    "https://rank-orbit.vercel.app",
-  ],
+  origin: ["http://localhost:4200", "http://localhost:5000"],
   credentials: true,
 });
 server.register(helmet);
@@ -56,7 +51,9 @@ server.register(
 
 const start = async () => {
   try {
-    const port = parseInt(process.env.CRAWLER_PORT || "3001");
+    // Default 4000 locally (conventional Node.js dev port — Apollo Server,
+    // Phoenix). Production binds via fly.toml internal_port.
+    const port = parseInt(process.env.CRAWLER_PORT || "4000");
     await server.listen({ port, host: "0.0.0.0" });
     logger.info(`🚀 Crawler Service running on: http://localhost:${port}/api`);
   } catch (err: unknown) {
