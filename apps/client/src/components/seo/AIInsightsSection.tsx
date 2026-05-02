@@ -46,7 +46,37 @@ export default function AIInsightsSection({
     );
   }
 
-  if (!data) return null;
+  // AI unavailable (Gemini outage, quota, etc). The crawler data is still
+  // valid and rendered elsewhere on the page — show a clear notice here so
+  // the user knows to retry rather than thinking the report is incomplete.
+  if (!data) {
+    return (
+      <Card className="h-full bg-amber-50/50 dark:bg-amber-900/10 backdrop-blur-md border-amber-200 dark:border-amber-800">
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            <CardTitle className="text-amber-800 dark:text-amber-300">
+              AI insights temporarily unavailable
+            </CardTitle>
+          </div>
+          <CardDescription className="pt-1">
+            The AI provider is busy or rate-limited right now. Your crawler report (Lighthouse,
+            metadata, readability) is on the right and below — try the audit again in a few minutes
+            for AI-powered recommendations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+          >
+            Retry now
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-md border-indigo-500/20 shadow-xl shadow-indigo-500/5">
