@@ -7,6 +7,13 @@ export const AI_LIMITS = {
   free: 3, // monthly limit for signed-in free users
 } as const;
 
+// Local-dev escape hatch. Set DISABLE_RATE_LIMIT=true in apps/api-gateway/.env
+// to bypass quota checks entirely. Never set this in Fly secrets.
+const RATE_LIMIT_DISABLED = process.env.DISABLE_RATE_LIMIT === "true";
+if (RATE_LIMIT_DISABLED) {
+  logger.warn("[RateLimit] DISABLE_RATE_LIMIT=true — quota checks bypassed. DEV ONLY.");
+}
+
 /**
  * Returns the current period key:
  * - "anon" for anonymous users (lifetime, no reset)
@@ -27,6 +34,10 @@ export class RateLimitService {
     identifier: string,
     isAnonymous: boolean,
   ): Promise<{ allowed: boolean; remaining: number }> {
+    if (RATE_LIMIT_DISABLED) {
+      return { allowed: true, remaining: 999 };
+    }
+
     const period = getPeriod(isAnonymous);
     const limit = isAnonymous ? AI_LIMITS.anonymous : AI_LIMITS.free;
 
@@ -53,6 +64,8 @@ export class RateLimitService {
    * Uses an upsert so it's safe to call concurrently.
    */
   async incrementUsage(identifier: string, isAnonymous: boolean): Promise<void> {
+    if (RATE_LIMIT_DISABLED) return;
+
     const period = getPeriod(isAnonymous);
 
     try {

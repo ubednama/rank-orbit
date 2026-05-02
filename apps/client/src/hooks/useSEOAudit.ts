@@ -38,6 +38,8 @@ export function useSEOAudit(url: string | null) {
   const [error, setError] = useState<string>("");
   const [isNetworkError, setIsNetworkError] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
+  /** True when anon hit their 1-free quota and needs to sign in to continue. */
+  const [requiresSignIn, setRequiresSignIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [sanitizedUrl, setSanitizedUrl] = useState<string | null>(null);
@@ -46,9 +48,6 @@ export function useSEOAudit(url: string | null) {
   useEffect(() => {
     let eventSource: EventSource | null = null;
     let isActive = true;
-    // AbortController so React StrictMode's double-mount + unmount cycle in dev
-    // doesn't fire two simultaneous POST /audit/start requests.
-    const abortController = new AbortController();
     // Single toast id we update as the audit progresses, instead of stacking
     // a new toast per `status` event.
     const progressToastId = `audit-${url}`;
@@ -88,7 +87,6 @@ export function useSEOAudit(url: string | null) {
         const startRes = await fetch(`${gatewayUrl}/api/audit/start`, {
           method: "POST",
           credentials: "include",
-          signal: abortController.signal,
           headers: {
             "Content-Type": "application/json",
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -98,18 +96,20 @@ export function useSEOAudit(url: string | null) {
 
         if (startRes.status === 429) {
           const body = await startRes.json().catch(() => ({}));
-          if (body.requiresSignIn) {
-            toast.info("Sign in to continue — you've used your free audit.", { duration: 5000 });
-            const redirectTo = encodeURIComponent(
-              window.location.pathname + window.location.search,
-            );
-            router.push(`/login?redirect_to=${redirectTo}`);
-          } else {
-            toast.error(body.message || "Monthly audit limit reached.", { duration: 6000 });
-          }
+          // Dismiss the rolling progress toast — UI takes over with an inline prompt.
+          toast.dismiss(progressToastId);
           if (isActive) {
-            setIsRateLimited(true);
             setLoading(false);
+            setIsRateLimited(true);
+            if (body.requiresSignIn) {
+              // Don't auto-redirect. Surface a state flag so the page can
+              // render an inline "Sign in to continue" prompt with a button.
+              setRequiresSignIn(true);
+            } else {
+              toast.error(body.message || "Monthly audit limit reached.", {
+                duration: 6000,
+              });
+            }
           }
           return;
         }
@@ -248,8 +248,6 @@ export function useSEOAudit(url: string | null) {
           eventSource?.close();
         };
       } catch (e) {
-        // Aborted by cleanup (StrictMode double-mount in dev) — silent.
-        if (e instanceof DOMException && e.name === "AbortError") return;
         console.error("Audit setup failed:", e);
         if (isActive) setLoading(false);
         toast.dismiss(progressToastId);
@@ -260,7 +258,6 @@ export function useSEOAudit(url: string | null) {
 
     return () => {
       isActive = false;
-      abortController.abort();
       if (eventSource) eventSource.close();
       // Don't leave a "loading" toast hanging when the effect tears down.
       toast.dismiss(progressToastId);
@@ -274,6 +271,7 @@ export function useSEOAudit(url: string | null) {
     error,
     isNetworkError,
     isRateLimited,
+    requiresSignIn,
     sanitizedUrl,
   };
 }

@@ -18,7 +18,8 @@ function SEOReportContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get("url");
 
-  const { data, aiLoading, error, isNetworkError, isRateLimited, sanitizedUrl } = useSEOAudit(url);
+  const { data, aiLoading, error, isNetworkError, isRateLimited, requiresSignIn, sanitizedUrl } =
+    useSEOAudit(url);
 
   const loading = false;
 
@@ -31,7 +32,7 @@ function SEOReportContent() {
   }
 
   if (isRateLimited) {
-    return <RateLimitState />;
+    return <RateLimitState requiresSignIn={requiresSignIn} />;
   }
 
   if (error && !loading) {
