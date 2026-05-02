@@ -154,12 +154,16 @@ export class AuditService {
     const seoScore = typeof aiAnalysis?.seo_score === "number" ? aiAnalysis.seo_score : null;
     const summary = aiAnalysis?.summary ?? "Your audit is complete.";
 
+    // The report page reads `?url=`, not a path id. Old `/seo/${auditId}`
+    // links were dead — fix them at the source. (auditId is still kept in
+    // the DTO signature for future "share by id" support.)
+    void auditId;
     await enqueueAuditCompleteEmail({
       to: user.email,
       url,
       seoScore,
       summary: summary.slice(0, 500),
-      reportUrl: `${APP_URL}/seo/${auditId}`,
+      reportUrl: `${APP_URL}/seo?url=${encodeURIComponent(url)}`,
     });
   }
 

@@ -11,31 +11,11 @@ export default function Hero() {
 
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
-    if (url) {
-      // Generate a simulated report ID
-      const id = `${new Date().getFullYear()}${
-        new Date().getMonth() + 1
-      }${new Date().getDate()}_${Math.floor(Math.random() * 10000000)}.html`;
-
-      // Extract domain for display/db
-      let domain: string;
-      try {
-        domain = new URL(url).hostname;
-      } catch {
-        domain = url;
-      }
-
-      const date = new Date().toISOString().split("T")[0].replace(/-/g, ""); // YYYYMMDD
-
-      const queryParams = new URLSearchParams({
-        date_begin: date,
-        date_end: date,
-        domain_1: domain,
-        url: url,
-      });
-
-      router.push(`/seo/${id}?${queryParams.toString()}`);
-    }
+    if (!url) return;
+    // The report page reads only `?url=...`. We used to also tack on a fake
+    // `[id]` segment plus date_begin/date_end/domain_1 — none of which the
+    // page ever read. Drop the noise; route is now `/seo?url=...`.
+    router.push(`/seo?url=${encodeURIComponent(url)}`);
   };
 
   return (
